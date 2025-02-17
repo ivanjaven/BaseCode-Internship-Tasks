@@ -1,0 +1,39 @@
+﻿{
+  "$schema": "http://json.schemastore.org/launchsettings.json",
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:49867",
+      "sslPort": 44358
+    }
+  },
+  "profiles": {
+    "BaseCode": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "weatherforecast",
+        "environmentVariables": {
+            "PORT": "5001",
+            "DB_PORT": "3306",
+            "HOST": "localhost",
+            "DB_NAME": "BASE",
+            "DB_HOST": "localhost",
+            "DB_USER": "root",
+            "DB_PASS": "",
+            "TWILIO_ACCOUNT_SID": "AC46bd3f42ae9b7a897907d0ac0f9aef21",
+            "TWILIO_AUTH_TOKEN": "659d7483cce2336758df8e488e40089c",
+            "ASPNETCORE_ENVIRONMENT": "local"
+        },
+      "applicationUrl": "http://localhost:5001"
+    },
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "launchBrowser": true,
+      "launchUrl": "weatherforecast",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
