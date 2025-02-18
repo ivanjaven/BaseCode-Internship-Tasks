@@ -12,6 +12,9 @@ using System.Text;
 using BaseCode.Models.Requests;
 using BaseCode.Models.Responses;
 using BaseCode.Models;
+using MySqlX.XDevAPI;
+using BaseCode.Models.Requests.Customer;
+using BaseCode.Models.Responses.Customer;
 
 namespace BaseCode.Controllers
 {
@@ -64,7 +67,7 @@ namespace BaseCode.Controllers
                 return BadRequest(resp);
             }
             resp = db.CreateUserUsingSqlScript(r);
-           // resp = db.CreateUserUsingSqlScript(r);
+            // resp = db.CreateUserUsingSqlScript(r);
 
             if (resp.isSuccess)
                 return Ok(resp);
@@ -112,7 +115,7 @@ namespace BaseCode.Controllers
         public IActionResult GetUserList([FromBody] GetUserListRequest r)
         {
             GetUserListResponse resp = new GetUserListResponse();
-       
+
             resp = db.GetUserList(r);
 
             if (resp.isSuccess)
@@ -325,6 +328,160 @@ namespace BaseCode.Controllers
             }
 
             resp = db.ValidateOTP(r);
+            if (resp.isSuccess)
+                return Ok(resp);
+            else
+                return BadRequest(resp);
+        }
+
+        // TASK 4 (FEB 17)
+        // CREATE 
+        [HttpPost("RegisterCustomer")]
+        public IActionResult RegisterCustomer([FromBody] RegisterCustomerRequest r)
+        {
+            CreateCustomerResponse resp = new CreateCustomerResponse();
+
+            if (string.IsNullOrEmpty(r.FirstName))
+            {
+                resp.Message = "Please specify First Name.";
+                return BadRequest(resp);
+            }
+            if (string.IsNullOrEmpty(r.LastName))
+            {
+                resp.Message = "Please specify Last Name.";
+                return BadRequest(resp);
+            }
+            if (string.IsNullOrEmpty(r.Email))
+            {
+                resp.Message = "Please specify Email.";
+                return BadRequest(resp);
+            }
+            if (string.IsNullOrEmpty(r.PhoneNumber))
+            {
+                resp.Message = "Please specify Phone Number.";
+                return BadRequest(resp);
+            }
+            if (string.IsNullOrEmpty(r.Password))
+            {
+                resp.Message = "Please specify Password.";
+                return BadRequest(resp);
+            }
+
+            resp = db.RegisterCustomer(r);
+
+            if (resp.isSuccess)
+                return Ok(resp);
+            else
+                return BadRequest(resp);
+        }
+
+        // READ
+        [HttpPost("ViewCustomerProfile")]
+        public IActionResult ViewCustomerProfile([FromBody] RegisterCustomerRequest r)
+        {
+            GetCustomerProfileResponse resp = new GetCustomerProfileResponse();
+
+            if (r == null || string.IsNullOrEmpty(r.CustomerId.ToString()))
+            {
+                resp.isSuccess = false;
+                resp.Message = "Invalid data or missing Customer ID.";
+                return BadRequest(resp);
+            }
+
+            resp = db.ViewCustomerProfile(r);
+            if (resp.isSuccess)
+                return Ok(resp);
+            else
+                return BadRequest(resp);
+        }
+
+        // UPDATE
+        [HttpPost("UpdateCustomerInfo")] 
+        public IActionResult UpdateCustomerInfo([FromBody] RegisterCustomerRequest r)
+        {
+            GenericAPIResponse resp = new GenericAPIResponse();
+
+            if (r == null || string.IsNullOrEmpty(r.CustomerId.ToString()))
+            {
+                resp.isSuccess = false;
+                resp.Message = "Invalid data or missing Customer ID.";
+                return BadRequest(resp);
+            }
+
+            resp = db.UpdateCustomerInfo(r);
+            if (resp.isSuccess)
+                return Ok(resp);
+            else
+                return BadRequest(resp);
+        }
+
+        // DELETE
+        [HttpPost("DeleteCustomerAccount")]
+        public IActionResult DeleteCustomerAccount([FromBody] RegisterCustomerRequest r)
+        {
+            CreateCustomerResponse resp = new CreateCustomerResponse();
+
+            if (string.IsNullOrEmpty(r.CustomerId.ToString()))
+            {
+                resp.Message = "Please specify Customer Id.";
+                return BadRequest(resp);
+            }
+
+            resp = db.DeleteCustomerAccount(r.CustomerId.ToString());
+
+            if (resp.isSuccess)
+                return Ok(resp);
+            else
+                return BadRequest(resp);
+        }
+
+        // LOG IN 
+        [HttpPost("LogInCustomer")]
+        public IActionResult LogInCustomer([FromBody] LogInUserRequest r)
+        {
+            LogInCustomerResponse resp = new LogInCustomerResponse();
+
+            if (string.IsNullOrEmpty(r.Email))
+            {
+                resp.Message = "Please Input Email.";
+                return BadRequest(resp);
+            }
+            if (string.IsNullOrEmpty(r.Password))
+            {
+                resp.Message = "Please Input Password.";
+                return BadRequest(resp);
+            }
+
+            resp = db.LogInCustomer(r);
+            if (resp.isSuccess)
+                return Ok(resp);
+            else
+                return BadRequest(resp);
+        }
+
+        // FORGOT PASSWORD 
+        [HttpPost("ForgotPassword")]
+        public IActionResult ForgotPassword([FromBody] ResetPasswordRequest r)
+        {
+            ResetPasswordResponse resp = new ResetPasswordResponse();
+
+            if (string.IsNullOrEmpty(r.Email))
+            {
+                resp.Message = "Please Input Password.";
+                return BadRequest(resp);
+            }
+            if (string.IsNullOrEmpty(r.CurrentPassword))
+            {
+                resp.Message = "Please Input Current Password.";
+                return BadRequest(resp);
+            }
+            if (string.IsNullOrEmpty(r.NewPassword))
+            {
+                resp.Message = "Please Input New Password.";
+                return BadRequest(resp);
+            }
+
+            resp = db.ForgotPassword(r);
             if (resp.isSuccess)
                 return Ok(resp);
             else

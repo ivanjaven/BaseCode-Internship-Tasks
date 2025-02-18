@@ -30,16 +30,17 @@ using Twilio;
 using Twilio.Rest.Api.V2010.Account;
 using Twilio.Types;
 using Microsoft.Extensions.Configuration;
+using BaseCode.Models.Responses.Customer;
+using BaseCode.Models.Requests.Customer;
 
 namespace BaseCode.Models
 {
     public class DBContext
     {
         public string ConnectionString { get; set; }
-        private readonly IConfiguration Configuration;
         public DBContext(string connStr)
         {
-            this.ConnectionString = connStr;            
+            this.ConnectionString = connStr;
         }
         private MySqlConnection GetConnection()
         {
@@ -87,8 +88,8 @@ namespace BaseCode.Models
 
                     MySqlCommand cmd = new MySqlCommand("INSERT INTO USER (FIRST_NAME,LAST_NAME,USER_NAME,PASSWORD) " +
                     "VALUES ('" + r.FirstName + "','" + r.LastName + "','" + r.UserName + "','" + r.Password + "');", conn);
-                    
-                  //  cmd.Parameters.Add(new MySqlParameter("@FIRST_NAME", r.FirstName));
+
+                    //  cmd.Parameters.Add(new MySqlParameter("@FIRST_NAME", r.FirstName));
                     cmd.Parameters.Add(new MySqlParameter("@LAST_NAME", r.LastName));
                     cmd.Parameters.Add(new MySqlParameter("@USER_NAME", r.UserName));
                     cmd.Parameters.Add(new MySqlParameter("@PASSWORD", r.Password));
@@ -98,7 +99,7 @@ namespace BaseCode.Models
                     conn.Close();
                 }
             }
-             
+
             catch (Exception ex)
             {
                 resp.Message = "Please try again.";
@@ -120,24 +121,24 @@ namespace BaseCode.Models
             try
             {
 
-             using (MySqlConnection conn = GetConnection())
+                using (MySqlConnection conn = GetConnection())
 
-             {
-                conn.Open();
+                {
+                    conn.Open();
 
 
-                MySqlCommand cmd = new MySqlCommand("UPDATE USER SET FIRST_NAME = @FIRST_NAME, LAST_NAME = @LAST_NAME, USER_NAME = @USER_NAME, PASSWORD = @PASSWORD " +
-                "WHERE USER_ID = @USER_ID;", conn);
-                cmd.Parameters.Add(new MySqlParameter("@FIRST_NAME", r.FirstName));
-                cmd.Parameters.Add(new MySqlParameter("@LAST_NAME", r.LastName));
-                cmd.Parameters.Add(new MySqlParameter("@USER_NAME", r.UserName));
-                cmd.Parameters.Add(new MySqlParameter("@USER_ID", r.UserId));
+                    MySqlCommand cmd = new MySqlCommand("UPDATE USER SET FIRST_NAME = @FIRST_NAME, LAST_NAME = @LAST_NAME, USER_NAME = @USER_NAME, PASSWORD = @PASSWORD " +
+                    "WHERE USER_ID = @USER_ID;", conn);
+                    cmd.Parameters.Add(new MySqlParameter("@FIRST_NAME", r.FirstName));
+                    cmd.Parameters.Add(new MySqlParameter("@LAST_NAME", r.LastName));
+                    cmd.Parameters.Add(new MySqlParameter("@USER_NAME", r.UserName));
+                    cmd.Parameters.Add(new MySqlParameter("@USER_ID", r.UserId));
                     cmd.Parameters.Add(new MySqlParameter("@PASSWORD", r.Password));
 
                     cmd.ExecuteNonQuery();
 
-                conn.Close();
-             }   
+                    conn.Close();
+                }
             }
             catch (Exception ex)
             {
@@ -183,7 +184,7 @@ namespace BaseCode.Models
             resp.Message = "Successfully deleted user.";
             return resp;
         }
-        public GetUserListResponse GetUserList(GetUserListRequest r )
+        public GetUserListResponse GetUserList(GetUserListRequest r)
         {
             GetUserListResponse resp = new GetUserListResponse();
             resp.Data = new List<Dictionary<string, string>>();
@@ -419,7 +420,7 @@ namespace BaseCode.Models
                             "INSERT INTO address (user_id, house_no, barangay, city, province, zip) " +
                             "VALUES (@USER_ID, @HOUSE_NO, @BARANGAY, @CITY, @PROVINCE, @ZIP);", conn);
 
-                        cmdAddress.Parameters.Add(new MySqlParameter("@USER_ID", userId)); 
+                        cmdAddress.Parameters.Add(new MySqlParameter("@USER_ID", userId));
                         cmdAddress.Parameters.Add(new MySqlParameter("@HOUSE_NO", r.Address.House_No));
                         cmdAddress.Parameters.Add(new MySqlParameter("@BARANGAY", r.Address.Barangay));
                         cmdAddress.Parameters.Add(new MySqlParameter("@CITY", r.Address.City));
@@ -432,11 +433,11 @@ namespace BaseCode.Models
 
                         resp.isSuccess = true;
                         resp.Message = "User successfully registered.";
-                        resp.UserId = userId; 
+                        resp.UserId = userId;
                     }
                     catch (Exception ex)
                     {
-          
+
                         transaction.Rollback();
                         resp.isSuccess = false;
                         resp.Message = "Error: " + ex.Message;
@@ -515,19 +516,19 @@ namespace BaseCode.Models
                     if (reader.HasRows)
                     {
                         reader.Read();
-                        string currentStoredPassword = reader.GetString("PASSWORD"); 
+                        string currentStoredPassword = reader.GetString("PASSWORD");
 
-                        reader.Close(); 
+                        reader.Close();
 
-                        if (currentStoredPassword == r.CurrentPassword) 
+                        if (currentStoredPassword == r.CurrentPassword)
                         {
-                      
+
                             string updatePasswordSql = "UPDATE USER SET PASSWORD = @PASSWORD WHERE EMAIL = @EMAIL";
                             MySqlCommand updatePasswordCmd = new MySqlCommand(updatePasswordSql, conn);
                             updatePasswordCmd.Parameters.Add(new MySqlParameter("@PASSWORD", r.NewPassword));
                             updatePasswordCmd.Parameters.Add(new MySqlParameter("@EMAIL", r.Email));
 
-                            updatePasswordCmd.ExecuteNonQuery(); 
+                            updatePasswordCmd.ExecuteNonQuery();
 
                             resp.isSuccess = true;
                             resp.Message = "Password has been successfully updated.";
@@ -835,6 +836,490 @@ namespace BaseCode.Models
             {
                 resp.isSuccess = false;
                 resp.Message = "An error occurred during OTP validation: " + ex.Message;
+            }
+
+            return resp;
+        }
+
+        // Task 4 (Feb 17)
+        // CREATE 
+        public CreateCustomerResponse RegisterCustomer(RegisterCustomerRequest r) 
+        {
+            CreateCustomerResponse resp = new CreateCustomerResponse();
+
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+
+                    MySqlTransaction transaction = conn.BeginTransaction();
+
+                    try
+                    {
+                        MySqlCommand cmdUser = new MySqlCommand(
+                            "INSERT INTO CUSTOMER (FIRST_NAME, MIDDLE_NAME, LAST_NAME, AGE, PHONE_NUMBER, EMAIL, PASSWORD, BIRTHDAY) " +
+                            "VALUES (@FIRST_NAME, @MIDDLE_NAME, @LAST_NAME, @AGE, @PHONE_NUMBER, @EMAIL, @PASSWORD, @BIRTHDAY);", conn);
+
+                        cmdUser.Parameters.Add(new MySqlParameter("@FIRST_NAME", r.FirstName));
+                        cmdUser.Parameters.Add(new MySqlParameter("@MIDDLE_NAME", r.MiddleName));
+                        cmdUser.Parameters.Add(new MySqlParameter("@LAST_NAME", r.LastName));
+                        cmdUser.Parameters.Add(new MySqlParameter("@AGE", r.Age));
+                        cmdUser.Parameters.Add(new MySqlParameter("@PHONE_NUMBER", r.PhoneNumber));
+                        cmdUser.Parameters.Add(new MySqlParameter("@EMAIL", r.Email));
+                        cmdUser.Parameters.Add(new MySqlParameter("@PASSWORD", r.Password));
+                        cmdUser.Parameters.Add(new MySqlParameter("@BIRTHDAY", r.Birthday));
+
+                        cmdUser.ExecuteNonQuery();
+
+                        // To be used for reference to address
+                        int customerId = (int)cmdUser.LastInsertedId;
+
+                        MySqlCommand cmdAddress = new MySqlCommand(
+                            "INSERT INTO ADDRESS_CUSTOMER (CUSTOMER_ID, HOUSE_NO, BARANGAY, CITY, PROVINCE, ZIP) " +
+                            "VALUES (@CUSTOMER_ID, @HOUSE_NO, @BARANGAY, @CITY, @PROVINCE, @ZIP);", conn);
+
+                        cmdAddress.Parameters.Add(new MySqlParameter("@CUSTOMER_ID", customerId));
+                        cmdAddress.Parameters.Add(new MySqlParameter("@HOUSE_NO", r.Address.House_No));
+                        cmdAddress.Parameters.Add(new MySqlParameter("@BARANGAY", r.Address.Barangay));
+                        cmdAddress.Parameters.Add(new MySqlParameter("@CITY", r.Address.City));
+                        cmdAddress.Parameters.Add(new MySqlParameter("@PROVINCE", r.Address.Province));
+                        cmdAddress.Parameters.Add(new MySqlParameter("@ZIP", r.Address.ZIP));
+
+                        cmdAddress.ExecuteNonQuery();
+
+                        transaction.Commit();
+
+                        resp.isSuccess = true;
+                        resp.Message = "User successfully registered.";
+                        resp.CustomerId = customerId;
+                    }
+                    catch (Exception ex)
+                    {
+
+                        transaction.Rollback();
+                        resp.isSuccess = false;
+                        resp.Message = "Error: " + ex.Message;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                resp.isSuccess = false;
+                resp.Message = "Database connection error: " + ex.Message;
+            }
+
+            return resp;
+        }
+
+        //READ
+        public GetCustomerProfileResponse ViewCustomerProfile(RegisterCustomerRequest r)
+        {
+            GetCustomerProfileResponse resp = new GetCustomerProfileResponse();
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+
+                    // Check active session first
+                    string sessionSql = @"SELECT * FROM SESSION_CUSTOMER 
+                               WHERE CUSTOMER_ID = @CustomerId 
+                               AND STATUS = 'A'";
+                    MySqlCommand sessionCmd = new MySqlCommand(sessionSql, conn);
+                    sessionCmd.Parameters.AddWithValue("@CustomerId", r.CustomerId);
+                    var sessionReader = sessionCmd.ExecuteReader();
+
+                    if (!sessionReader.HasRows)
+                    {
+                        resp.isSuccess = false;
+                        resp.Message = "No active session found. Please login again.";
+                        return resp;
+                    }
+                    sessionReader.Close();
+
+                    string sql = @"SELECT C.CUSTOMER_ID, C.FIRST_NAME, C.MIDDLE_NAME, C.LAST_NAME, 
+                         C.AGE, C.PHONE_NUMBER, C.BIRTHDAY,
+                         A.HOUSE_NO, A.BARANGAY, A.CITY, A.PROVINCE, A.ZIP 
+                         FROM CUSTOMER C
+                         LEFT JOIN ADDRESS_CUSTOMER A ON A.CUSTOMER_ID = C.CUSTOMER_ID 
+                         WHERE A.CUSTOMER_ID = @CustomerId 
+                         AND C.STATUS = 'A'";
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    cmd.Parameters.AddWithValue("@CustomerId", r.CustomerId);
+                    var reader = cmd.ExecuteReader();
+
+                    if (reader.Read())
+                    {
+                        resp.CustomerId = Convert.ToInt32(reader["CUSTOMER_ID"]);
+                        resp.FirstName = reader["FIRST_NAME"].ToString();
+                        resp.MiddleName = reader["MIDDLE_NAME"].ToString();
+                        resp.LastName = reader["LAST_NAME"].ToString();
+                        resp.Age = Convert.ToInt32(reader["AGE"]);
+                        resp.PhoneNumber = reader["PHONE_NUMBER"].ToString();
+                        resp.Birthday = reader["BIRTHDAY"].ToString();
+
+                        resp.Address = new Responses.Customer.AddressResponse
+                        {
+                            House_No = reader["HOUSE_NO"].ToString(),
+                            Barangay = reader["BARANGAY"].ToString(),
+                            City = reader["CITY"].ToString(),
+                            Province = reader["PROVINCE"].ToString(),
+                            ZIP = reader["ZIP"].ToString()
+                        };
+
+                        resp.isSuccess = true;
+                        resp.Message = "Customer profile retrieved successfully";
+                    }
+                    else
+                    {
+                        resp.isSuccess = false;
+                        resp.Message = "Customer not found";
+                    }
+                    conn.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                resp.Message = ex.ToString();
+                resp.isSuccess = false;
+            }
+            return resp;
+        }
+
+        // UPDATE
+        public GenericAPIResponse UpdateCustomerInfo(RegisterCustomerRequest r)
+        {
+            GenericAPIResponse resp = new GenericAPIResponse();
+
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+
+                    string sessionSql = "SELECT COUNT(*) FROM SESSION_CUSTOMER WHERE CUSTOMER_ID = @CUSTOMER_ID AND STATUS = 'A'";
+                    MySqlCommand sessionCmd = new MySqlCommand(sessionSql, conn);
+                    sessionCmd.Parameters.Add(new MySqlParameter("@CUSTOMER_ID", r.CustomerId));
+                    int activeSessionCount = Convert.ToInt32(sessionCmd.ExecuteScalar());
+
+                    if (activeSessionCount == 0)
+                    {
+                        resp.isSuccess = false;
+                        resp.Message = "No active session found. Please log in first.";
+                        return resp;
+                    }
+
+                    string checkUserExistenceSql = "SELECT COUNT(*) FROM CUSTOMER WHERE CUSTOMER_ID = @CUSTOMER_ID";
+                    MySqlCommand checkCmd = new MySqlCommand(checkUserExistenceSql, conn);
+                    checkCmd.Parameters.Add(new MySqlParameter("@CUSTOMER_ID", r.CustomerId));
+                    int userExists = Convert.ToInt32(checkCmd.ExecuteScalar());
+
+                    if (userExists == 0)
+                    {
+                        resp.isSuccess = false;
+                        resp.Message = "Customer ID not found.";
+                        return resp;
+                    }
+
+                    MySqlTransaction transaction = conn.BeginTransaction();
+
+                    try
+                    {
+                        string updateSql = "UPDATE CUSTOMER SET ";
+                        List<MySqlParameter> parameters = new List<MySqlParameter>();
+
+                        if (!string.IsNullOrEmpty(r.FirstName))
+                        {
+                            updateSql += "FIRST_NAME = @FIRST_NAME, ";
+                            parameters.Add(new MySqlParameter("@FIRST_NAME", r.FirstName));
+                        }
+                        if (!string.IsNullOrEmpty(r.MiddleName))
+                        {
+                            updateSql += "MIDDLE_NAME = @MIDDLE_NAME, ";
+                            parameters.Add(new MySqlParameter("@MIDDLE_NAME", r.MiddleName));
+                        }
+                        if (!string.IsNullOrEmpty(r.LastName))
+                        {
+                            updateSql += "LAST_NAME = @LAST_NAME, ";
+                            parameters.Add(new MySqlParameter("@LAST_NAME", r.LastName));
+                        }
+                        if (r.Age > 0)
+                        {
+                            updateSql += "AGE = @AGE, ";
+                            parameters.Add(new MySqlParameter("@AGE", r.Age));
+                        }
+                        if (!string.IsNullOrEmpty(r.PhoneNumber))
+                        {
+                            updateSql += "PHONE_NUMBER = @PHONE_NUMBER, ";
+                            parameters.Add(new MySqlParameter("@PHONE_NUMBER", r.PhoneNumber));
+                        }
+                        if (!string.IsNullOrEmpty(r.Email))
+                        {
+                            updateSql += "EMAIL = @EMAIL, ";
+                            parameters.Add(new MySqlParameter("@EMAIL", r.Email));
+                        }
+                        if (!string.IsNullOrEmpty(r.Birthday))
+                        {
+                            updateSql += "BIRTHDAY = @BIRTHDAY, ";
+                            parameters.Add(new MySqlParameter("@BIRTHDAY", r.Birthday));
+                        }
+
+                        if (updateSql.EndsWith(", "))
+                            updateSql = updateSql.Substring(0, updateSql.Length - 2);
+
+                        updateSql += " WHERE CUSTOMER_ID = @CUSTOMER_ID";
+                        parameters.Add(new MySqlParameter("@CUSTOMER_ID", r.CustomerId));
+
+                        MySqlCommand cmd = new MySqlCommand(updateSql, conn);
+                        cmd.Parameters.AddRange(parameters.ToArray());
+                        cmd.ExecuteNonQuery();
+
+                        if (r.Address != null)
+                        {
+                            string addressSql = "UPDATE ADDRESS SET ";
+                            List<MySqlParameter> addressParameters = new List<MySqlParameter>();
+
+                            if (!string.IsNullOrEmpty(r.Address.House_No))
+                            {
+                                addressSql += "HOUSE_NO = @HOUSE_NO, ";
+                                addressParameters.Add(new MySqlParameter("@HOUSE_NO", r.Address.House_No));
+                            }
+                            if (!string.IsNullOrEmpty(r.Address.Barangay))
+                            {
+                                addressSql += "BARANGAY = @BARANGAY, ";
+                                addressParameters.Add(new MySqlParameter("@BARANGAY", r.Address.Barangay));
+                            }
+                            if (!string.IsNullOrEmpty(r.Address.City))
+                            {
+                                addressSql += "CITY = @CITY, ";
+                                addressParameters.Add(new MySqlParameter("@CITY", r.Address.City));
+                            }
+                            if (!string.IsNullOrEmpty(r.Address.Province))
+                            {
+                                addressSql += "PROVINCE = @PROVINCE, ";
+                                addressParameters.Add(new MySqlParameter("@PROVINCE", r.Address.Province));
+                            }
+                            if (!string.IsNullOrEmpty(r.Address.ZIP))
+                            {
+                                addressSql += "ZIP = @ZIP, ";
+                                addressParameters.Add(new MySqlParameter("@ZIP", r.Address.ZIP));
+                            }
+
+                            if (addressSql.EndsWith(", "))
+                                addressSql = addressSql.Substring(0, addressSql.Length - 2);
+
+                            addressSql += " WHERE CUSTOMER_ID = @CUSTOMER_ID";
+                            addressParameters.Add(new MySqlParameter("@CUSTOMER_ID", r.CustomerId));
+
+                            MySqlCommand cmdAddress = new MySqlCommand(addressSql, conn);
+                            cmdAddress.Parameters.AddRange(addressParameters.ToArray());
+                            cmdAddress.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+
+                        resp.isSuccess = true;
+                        resp.Message = "Customer details successfully updated.";
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        resp.isSuccess = false;
+                        resp.Message = "Error: " + ex.Message;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                resp.isSuccess = false;
+                resp.Message = "Database connection error: " + ex.Message;
+            }
+
+            return resp;
+        }
+
+        // DELETE
+        public CreateCustomerResponse DeleteCustomerAccount(string customerId)
+        {
+            CreateCustomerResponse resp = new CreateCustomerResponse();
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+
+                    string sessionSql = "SELECT COUNT(*) FROM SESSION_CUSTOMER WHERE CUSTOMER_ID = @CUSTOMER_ID AND STATUS = 'A'";
+                    MySqlCommand sessionCmd = new MySqlCommand(sessionSql, conn);
+                    sessionCmd.Parameters.Add(new MySqlParameter("@CUSTOMER_ID", customerId));
+                    int activeSessionCount = Convert.ToInt32(sessionCmd.ExecuteScalar());
+
+                    if (activeSessionCount == 0)
+                    {
+                        resp.isSuccess = false;
+                        resp.Message = "No active session found. Please log in first.";
+                        return resp;
+                    }
+
+                    MySqlCommand userCmd = new MySqlCommand(
+                        "UPDATE CUSTOMER SET STATUS = 'I' WHERE CUSTOMER_ID = @CUSTOMER_ID", conn);
+                    userCmd.Parameters.Add(new MySqlParameter("@CUSTOMER_ID", customerId));
+                    userCmd.ExecuteNonQuery();
+
+                    resp.isSuccess = true;
+                    resp.Message = "Successfully deleted customer.";
+                }
+            }
+            catch (Exception ex)
+            {
+                resp.isSuccess = false;
+                resp.Message = "An error occurred: " + ex.Message;
+            }
+            return resp;
+        }
+
+        // LOG IN
+        public LogInCustomerResponse LogInCustomer(LogInUserRequest r) 
+        {
+            LogInCustomerResponse resp = new LogInCustomerResponse();
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    MySqlTransaction transaction = conn.BeginTransaction();
+                    try
+                    {
+                        // Check login attempts in last 2 minutes
+                        string attemptSql = @"SELECT COUNT(*) FROM LOGIN_ATTEMPT_CUSTOMER
+                                    WHERE CUSTOMER_ID = (SELECT CUSTOMER_ID FROM CUSTOMER WHERE EMAIL = @EMAIL)
+                                    AND SUCCESS = false 
+                                    AND ATTEMPT_DATE >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)";
+
+                        MySqlCommand attemptCmd = new MySqlCommand(attemptSql, conn);
+                        attemptCmd.Parameters.Add(new MySqlParameter("@EMAIL", r.Email));
+                        int recentAttempts = Convert.ToInt32(attemptCmd.ExecuteScalar());
+
+                        if (recentAttempts >= 5)
+                        {
+                            resp.isSuccess = false;
+                            resp.Message = "Account is temporarily locked. Please try again later.";
+                            return resp;
+                        }
+
+                        string loginSql = "SELECT CUSTOMER_ID FROM CUSTOMER WHERE EMAIL = @EMAIL AND PASSWORD = @PASSWORD AND STATUS = 'A'";
+                        MySqlCommand loginCmd = new MySqlCommand(loginSql, conn);
+                        loginCmd.Parameters.Add(new MySqlParameter("@EMAIL", r.Email));
+                        loginCmd.Parameters.Add(new MySqlParameter("@PASSWORD", r.Password));
+
+                        var reader = loginCmd.ExecuteReader();
+                        bool loginSuccess = reader.HasRows;
+                        int customerId = 0;
+
+                        if (loginSuccess)
+                        {
+                            reader.Read();
+                            customerId = reader.GetInt32("CUSTOMER_ID");
+                        }
+                        reader.Close();
+
+                        string insertAttemptSql = @"INSERT INTO LOGIN_ATTEMPT_CUSTOMER (CUSTOMER_ID, SUCCESS) 
+                                          VALUES ((SELECT CUSTOMER_ID FROM CUSTOMER WHERE EMAIL = @EMAIL), @SUCCESS)";
+                        MySqlCommand insertAttemptCmd = new MySqlCommand(insertAttemptSql, conn);
+                        insertAttemptCmd.Parameters.Add(new MySqlParameter("@EMAIL", r.Email));
+                        insertAttemptCmd.Parameters.Add(new MySqlParameter("@SUCCESS", loginSuccess));
+                        insertAttemptCmd.ExecuteNonQuery();
+
+                        if (loginSuccess)
+                        {
+                            string sessionSql = "INSERT INTO SESSION_CUSTOMER (CUSTOMER_ID) VALUES (@CUSTOMER_ID)";
+                            MySqlCommand sessionCmd = new MySqlCommand(sessionSql, conn);
+                            sessionCmd.Parameters.Add(new MySqlParameter("@CUSTOMER_ID", customerId));
+                            sessionCmd.ExecuteNonQuery();
+
+                            resp.isSuccess = true;
+                            resp.Message = "Login successful.";
+                            resp.CustomerId = customerId;
+                        }
+                        else
+                        {
+                            resp.isSuccess = false;
+                            resp.Message = "Invalid username or password.";
+                        }
+
+                        transaction.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                resp.isSuccess = false;
+                resp.Message = "An error occurred: " + ex.Message;
+            }
+            return resp;
+        }
+
+        // FORGOT PASSWORD
+        public ResetPasswordResponse ForgotPassword(Requests.ResetPasswordRequest r)
+        {
+            ResetPasswordResponse resp = new ResetPasswordResponse();
+
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+
+                    string sql = "SELECT CUSTOMER_ID, PASSWORD FROM CUSTOMER WHERE EMAIL = @EMAIL";
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    cmd.Parameters.Add(new MySqlParameter("@EMAIL", r.Email));
+
+                    var reader = cmd.ExecuteReader();
+
+                    if (reader.HasRows)
+                    {
+                        reader.Read();
+                        string currentStoredPassword = reader.GetString("PASSWORD");
+
+                        reader.Close();
+
+                        if (currentStoredPassword == r.CurrentPassword)
+                        {
+
+                            string updatePasswordSql = "UPDATE CUSTOMER SET PASSWORD = @PASSWORD WHERE EMAIL = @EMAIL";
+                            MySqlCommand updatePasswordCmd = new MySqlCommand(updatePasswordSql, conn);
+                            updatePasswordCmd.Parameters.Add(new MySqlParameter("@PASSWORD", r.NewPassword));
+                            updatePasswordCmd.Parameters.Add(new MySqlParameter("@EMAIL", r.Email));
+
+                            updatePasswordCmd.ExecuteNonQuery();
+
+                            resp.isSuccess = true;
+                            resp.Message = "Password has been successfully updated.";
+                        }
+                        else
+                        {
+                            resp.isSuccess = false;
+                            resp.Message = "Current password is incorrect.";
+                        }
+                    }
+                    else
+                    {
+                        resp.isSuccess = false;
+                        resp.Message = "No user found with the provided email.";
+                    }
+
+                    conn.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                resp.isSuccess = false;
+                resp.Message = "An error occurred: " + ex.Message;
             }
 
             return resp;
