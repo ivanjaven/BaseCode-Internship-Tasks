@@ -1,0 +1,619 @@
+{
+	"info": {
+		"_postman_id": "bb736ded-04bc-4108-b099-a2b05b1fd9af",
+		"name": "BaseCode",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "36204526"
+	},
+	"item": [
+		{
+			"name": "Customer",
+			"item": [
+				{
+					"name": "Register Customer",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"FirstName\": \"Ivan\",\r\n  \"MiddleName\": \"C\",\r\n  \"LastName\": \"Javen\",\r\n  \"Age\": 30,\r\n  \"PhoneNumber\": \"12345672353\",\r\n  \"Email\": \"ivan@example.com\",\r\n  \"Password\": \"SecurePassword123\",\r\n  \"Birthday\": \"1994-05-15\",\r\n  \"Address\": {\r\n    \"House_No\": \"123\",\r\n    \"Barangay\": \"Mabuhay\",\r\n    \"City\": \"Sample City\",\r\n    \"Province\": \"Bulacan Province\",\r\n    \"ZIP\": \"12345\"\r\n  }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5001/BaseCode/RegisterCustomer",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"BaseCode",
+								"RegisterCustomer"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "View Customer Profile",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"CustomerId\":  9\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5001/BaseCode/ViewCustomerProfile",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"BaseCode",
+								"ViewCustomerProfile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Customer Info",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"UserId\": \"8\",\r\n  \"FirstName\": \"Ivan\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5001/BaseCode/UpdateCustomerInfo",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"BaseCode",
+								"UpdateCustomerInfo"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Customer Account",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5001/BaseCode/DeleteCustomerAccount",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"BaseCode",
+								"DeleteCustomerAccount"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Forgot Password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"Email\":\"cris@example.com\",\r\n    \"CurrentPassword\":\"SecurePassword123\",\r\n    \"NewPassword\":\"SecurePassword1234\"\r\n\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5001/BaseCode/ForgotPassword",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"BaseCode",
+								"ForgotPassword"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Log In Customer",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"Email\":\"ivan@example.com\",\r\n    \"Password\":\"SecurePassword1234\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5001/BaseCode/LogInCustomer",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"BaseCode",
+								"LogInCustomer"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Create User",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\r\n \"FirstName\":\"Kenneth\",\r\n \"LastName\":\"Quizon\",\r\n \"UserName\":\"Kennethzky\",\r\n \"Password\":\"Abc123\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5001/BaseCode/CreateUser",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"BaseCode",
+						"CreateUser"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "http://localhost:5001/BaseCode/CreateUser",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n \"FirstName\":\"Kenneth\",\r\n \"lastName\":\"Quizon\",\r\n \"UserName\":\"Neth\",\r\n \"Password\":\"Abc123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5001/BaseCode/CreateUser",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"BaseCode",
+								"CreateUser"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Sun, 16 Aug 2020 08:37:36 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "Server",
+							"value": "Kestrel"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"isSuccess\": true,\n    \"Message\": \" Successfully created user.\",\n    \"UserId\": 1\n}"
+				}
+			]
+		},
+		{
+			"name": "Get User List",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5001/BaseCode/GetUserList",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"BaseCode",
+						"GetUserList"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Get User List",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5001/BaseCode/GetUserList",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"BaseCode",
+								"GetUserList"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Sun, 16 Aug 2020 11:31:20 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "Server",
+							"value": "Kestrel"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"isSuccess\": true,\n    \"Message\": \"List Of Users\",\n    \"UsersList\": [\n        {\n            \"UserId\": 1,\n            \"FirstName\": \"Kenneth\",\n            \"LastName\": \"Quizon\",\n            \"UserName\": \"Neth\",\n            \"Status\": \"ACTIVE\"\n        },\n        {\n            \"UserId\": 2,\n            \"FirstName\": \"Mackie\",\n            \"LastName\": \"Ortiz\",\n            \"UserName\": \"Mack\",\n            \"Status\": \"ACTIVE\"\n        }\n    ]\n}"
+				}
+			]
+		},
+		{
+			"name": "Update User",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n \"UserId\":1,\r\n \"FirstName\":\"Kenneth\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5001/BaseCode/UpdateUser",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"BaseCode",
+						"UpdateUser"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete User",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n \"UserId\":1,\r\n \"FirstName\":\"Kenneth\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5001/BaseCode/UpdateUser",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"BaseCode",
+						"UpdateUser"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get User By Id",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n \"UserId\":1\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5001/BaseCode/GetUserById",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"BaseCode",
+						"GetUserById"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Register User",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"FirstName\": \"John\",\r\n  \"MiddleName\": \"D\",\r\n  \"LastName\": \"Doe\",\r\n  \"Age\": 30,\r\n  \"PhoneNumber\": \"1234567890\",\r\n  \"Email\": \"johndoe@example.com\",\r\n  \"Password\": \"SecurePassword123\",\r\n  \"Birthday\": \"1994-05-15\",\r\n  \"Address\": {\r\n    \"House_No\": \"123\",\r\n    \"Barangay\": \"Mabuhay\",\r\n    \"City\": \"Sample City\",\r\n    \"Province\": \"Sample Province\",\r\n    \"ZIP\": \"12345\"\r\n  }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5001/BaseCode/RegisterUser",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"BaseCode",
+						"RegisterUser"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Log In User",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"Email\":\"ivan@example.com\",\r\n    \"Password\":\"SecurePassword123\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5001/BaseCode/LogInUser",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"BaseCode",
+						"LogInUser"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Reset Password",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"Email\":\"ivan@example.com\",\r\n    \"CurrentPassword\":\"SecurePassword1234\",\r\n    \"NewPassword\":\"SecurePassword123\"\r\n\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5001/BaseCode/ResetPassword",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"BaseCode",
+						"ResetPassword"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update User Info",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"UserId\": \"\",\r\n  \"FirstName\": \"John\",\r\n  \"LastName\": \"Dee\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5001/BaseCode/UpdateUserInfo",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"BaseCode",
+						"UpdateUserInfo"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Send OTP Request Code",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"UserId\":\"3\",\r\n    \"PhoneNumber\":\"+18777804236\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5001/BaseCode/SendOTPResetCode",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"BaseCode",
+						"SendOTPResetCode"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Validate OTP",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"UserId\":\"7\",\r\n    \"OTPCode\":\"A8C5B19\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5001/BaseCode/ValidateOTP",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"BaseCode",
+						"ValidateOTP"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "View Profile",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "Delete User Account",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	]
+}
