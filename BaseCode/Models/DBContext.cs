@@ -32,6 +32,8 @@ using Twilio.Types;
 using Microsoft.Extensions.Configuration;
 using BaseCode.Models.Responses.Customer;
 using BaseCode.Models.Requests.Customer;
+using BaseCode.Models.Requests.Roles;
+using BaseCode.Models.Responses.Roles;
 
 namespace BaseCode.Models
 {
@@ -1325,5 +1327,351 @@ namespace BaseCode.Models
             return resp;
         }
 
+        // TASK 5 (FEB 20) ROLES AND PERMISSIONS
+        public RoleResponse CreateRole(CreateRoleRequest r)
+        {
+            RoleResponse resp = new RoleResponse();
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    MySqlTransaction transaction = conn.BeginTransaction();
+
+                    try
+                    {
+                        string sql = "INSERT INTO ROLES (ROLE_NAME, DESCRIPTION) VALUES (@ROLE_NAME, @DESCRIPTION)";
+                        MySqlCommand cmd = new MySqlCommand(sql, conn);
+                        cmd.Parameters.Add(new MySqlParameter("@ROLE_NAME", r.RoleName));
+                        cmd.Parameters.Add(new MySqlParameter("@DESCRIPTION", r.Description));
+
+                        cmd.ExecuteNonQuery();
+                        int roleId = (int)cmd.LastInsertedId;
+
+                        transaction.Commit();
+
+                        resp.isSuccess = true;
+                        resp.Message = "Role created successfully";
+                        resp.RoleId = roleId;
+                        resp.RoleName = r.RoleName;
+                        resp.Description = r.Description;
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        resp.isSuccess = false;
+                        resp.Message = "Error creating role: " + ex.Message;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                resp.isSuccess = false;
+                resp.Message = "An error occurred: " + ex.Message;
+            }
+            return resp;
+        }
+
+        public GetRoleListResponse GetRoles(GetRoleRequest r)
+        {
+            GetRoleListResponse resp = new GetRoleListResponse();
+            resp.Data = new List<Dictionary<string, string>>();
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    string sql = "SELECT * FROM ROLES";
+
+                    if (r.RoleId.HasValue)
+                    {
+                        sql += " WHERE ROLE_ID = @ROLE_ID";
+                    }
+
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+
+                    if (r.RoleId.HasValue)
+                    {
+                        cmd.Parameters.Add(new MySqlParameter("@ROLE_ID", r.RoleId.Value));
+                    }
+
+                    var reader = cmd.ExecuteReader();
+                    if (reader.HasRows)
+                    {
+                        DataTable dt = new DataTable();
+                        dt.Load(reader);
+                        reader.Close();
+                        var columns = dt.Columns.Cast<DataColumn>();
+
+                        resp.Data.AddRange(dt.AsEnumerable()
+                            .Select(dataRow => columns.Select(column =>
+                                new { Column = column.ColumnName, Value = dataRow[column] })
+                                .ToDictionary(data => data.Column.ToString(), data => data.Value.ToString()))
+                            .ToList());
+                    }
+                    resp.isSuccess = true;
+                    resp.Message = "Roles retrieved successfully";
+                }
+            }
+            catch (Exception ex)
+            {
+                resp.isSuccess = false;
+                resp.Message = "An error occurred: " + ex.Message;
+            }
+            return resp;
+        }
+
+        public PermissionResponse GetPermissions()
+        {
+            PermissionResponse resp = new PermissionResponse();
+            resp.Data = new List<Dictionary<string, string>>();
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    string sql = "SELECT * FROM PERMISSIONS";
+
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    var reader = cmd.ExecuteReader();
+                    if (reader.HasRows)
+                    {
+                        DataTable dt = new DataTable();
+                        dt.Load(reader);
+                        reader.Close();
+                        var columns = dt.Columns.Cast<DataColumn>();
+
+                        resp.Data.AddRange(dt.AsEnumerable()
+                            .Select(dataRow => columns.Select(column =>
+                                new { Column = column.ColumnName, Value = dataRow[column] })
+                                .ToDictionary(data => data.Column.ToString(), data => data.Value.ToString()))
+                            .ToList());
+                    }
+                    resp.isSuccess = true;
+                    resp.Message = "Permissions retrieved successfully";
+                }
+            }
+            catch (Exception ex)
+            {
+                resp.isSuccess = false;
+                resp.Message = "An error occurred: " + ex.Message;
+            }
+            return resp;
+        }
+
+        public GenericAPIResponse AssignPermissionToRole(AssignPermissionRequest r)
+        {
+            GenericAPIResponse resp = new GenericAPIResponse();
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    MySqlTransaction transaction = conn.BeginTransaction();
+
+                    try
+                    {
+                        string checkSql = "SELECT COUNT(*) FROM ROLE_PERMISSIONS WHERE ROLE_ID = @ROLE_ID AND PERMISSION_ID = @PERMISSION_ID";
+                        MySqlCommand checkCmd = new MySqlCommand(checkSql, conn);
+                        checkCmd.Parameters.Add(new MySqlParameter("@ROLE_ID", r.RoleId));
+                        checkCmd.Parameters.Add(new MySqlParameter("@PERMISSION_ID", r.PermissionId));
+                        int exists = Convert.ToInt32(checkCmd.ExecuteScalar());
+
+                        if (exists > 0)
+                        {
+                            resp.isSuccess = true;
+                            resp.Message = "Permission already assigned to role";
+                            return resp;
+                        }
+
+                        string sql = "INSERT INTO ROLE_PERMISSIONS (ROLE_ID, PERMISSION_ID) VALUES (@ROLE_ID, @PERMISSION_ID)";
+                        MySqlCommand cmd = new MySqlCommand(sql, conn);
+                        cmd.Parameters.Add(new MySqlParameter("@ROLE_ID", r.RoleId));
+                        cmd.Parameters.Add(new MySqlParameter("@PERMISSION_ID", r.PermissionId));
+
+                        cmd.ExecuteNonQuery();
+                        transaction.Commit();
+
+                        resp.isSuccess = true;
+                        resp.Message = "Permission assigned to role successfully";
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        resp.isSuccess = false;
+                        resp.Message = "Error assigning permission: " + ex.Message;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                resp.isSuccess = false;
+                resp.Message = "An error occurred: " + ex.Message;
+            }
+            return resp;
+        }
+
+        public GenericAPIResponse AssignUserRole(AssignUserRoleRequest r)
+        {
+            GenericAPIResponse resp = new GenericAPIResponse();
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    MySqlTransaction transaction = conn.BeginTransaction();
+
+                    try
+                    {
+                        string sql = "UPDATE USER SET ROLE_ID = @ROLE_ID WHERE USER_ID = @USER_ID";
+                        MySqlCommand cmd = new MySqlCommand(sql, conn);
+                        cmd.Parameters.Add(new MySqlParameter("@ROLE_ID", r.RoleId));
+                        cmd.Parameters.Add(new MySqlParameter("@USER_ID", r.TargetUserId));
+
+                        int rowsAffected = cmd.ExecuteNonQuery();
+
+                        if (rowsAffected == 0)
+                        {
+                            resp.isSuccess = false;
+                            resp.Message = "User not found";
+                            return resp;
+                        }
+
+                        transaction.Commit();
+
+                        resp.isSuccess = true;
+                        resp.Message = "Role assigned to user successfully";
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        resp.isSuccess = false;
+                        resp.Message = "Error assigning role: " + ex.Message;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                resp.isSuccess = false;
+                resp.Message = "An error occurred: " + ex.Message;
+            }
+            return resp;
+        }
+
+        public bool CheckPermission(int userId, string permissionName)
+        {
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    string sql = @"
+                SELECT COUNT(*) FROM USER u
+                JOIN ROLE_PERMISSIONS rp ON u.ROLE_ID = rp.ROLE_ID
+                JOIN PERMISSIONS p ON rp.PERMISSION_ID = p.PERMISSION_ID
+                WHERE u.USER_ID = @USER_ID 
+                AND p.PERMISSION_NAME = @PERMISSION_NAME
+                AND u.STATUS = 'A'";
+
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    cmd.Parameters.Add(new MySqlParameter("@USER_ID", userId));
+                    cmd.Parameters.Add(new MySqlParameter("@PERMISSION_NAME", permissionName));
+
+                    int count = Convert.ToInt32(cmd.ExecuteScalar());
+                    return count > 0;
+                }
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public PermissionResponse GetUserPermissions(int userId)
+        {
+            PermissionResponse resp = new PermissionResponse();
+            resp.Data = new List<Dictionary<string, string>>();
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    string sql = @"
+                SELECT p.PERMISSION_ID, p.PERMISSION_NAME, p.DESCRIPTION
+                FROM USER u
+                JOIN ROLE_PERMISSIONS rp ON u.ROLE_ID = rp.ROLE_ID
+                JOIN PERMISSIONS p ON rp.PERMISSION_ID = p.PERMISSION_ID
+                WHERE u.USER_ID = @USER_ID 
+                AND u.STATUS = 'A'";
+
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    cmd.Parameters.Add(new MySqlParameter("@USER_ID", userId));
+
+                    var reader = cmd.ExecuteReader();
+                    if (reader.HasRows)
+                    {
+                        DataTable dt = new DataTable();
+                        dt.Load(reader);
+                        reader.Close();
+                        var columns = dt.Columns.Cast<DataColumn>();
+
+                        resp.Data.AddRange(dt.AsEnumerable()
+                            .Select(dataRow => columns.Select(column =>
+                                new { Column = column.ColumnName, Value = dataRow[column] })
+                                .ToDictionary(data => data.Column.ToString(), data => data.Value.ToString()))
+                            .ToList());
+                        resp.isSuccess = true;
+                        resp.Message = "User permissions retrieved successfully";
+                    }
+                    else
+                    {
+                        resp.isSuccess = true;
+                        resp.Message = "User has no permissions";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                resp.isSuccess = false;
+                resp.Message = "An error occurred: " + ex.Message;
+            }
+            return resp;
+        }
+        public GetUserListResponse GetCustomerUsers()
+        {
+            GetUserListResponse resp = new GetUserListResponse();
+            resp.Data = new List<Dictionary<string, string>>();
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    string sql = "SELECT * FROM USER WHERE STATUS = 'A' AND ROLE_ID = 2";
+
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    var reader = cmd.ExecuteReader();
+                    if (reader.HasRows)
+                    {
+                        DataTable dt = new DataTable();
+                        dt.Load(reader);
+                        reader.Close();
+                        var columns = dt.Columns.Cast<DataColumn>();
+
+                        resp.Data.AddRange(dt.AsEnumerable().Select(dataRow => columns.Select(column =>
+                      new { Column = column.ColumnName, Value = dataRow[column] })
+                      .ToDictionary(data => data.Column.ToString(), data => data.Value.ToString())).ToList());
+                    }
+                    resp.isSuccess = true;
+                    resp.Message = "List of customers:";
+                    conn.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                resp.Message = ex.ToString();
+                resp.isSuccess = false;
+            }
+            return resp;
+        }
     }
 }

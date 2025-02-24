@@ -16,6 +16,7 @@ namespace BaseCode.Models.Requests.Customer
         public string Email { get; set; }
         public string Password { get; set; }
         public string Birthday { get; set; }
+        public int Role {  get; set; }
         public AddressRequest Address { get; set; }
 
     }
