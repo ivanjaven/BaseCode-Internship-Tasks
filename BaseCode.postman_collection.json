@@ -177,6 +177,276 @@
 			]
 		},
 		{
+			"name": "Role Management",
+			"item": [
+				{
+					"name": "CreateRole",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"UserId\": 1,\n    \"RoleName\": \"Manager\",\n    \"Description\": \"Mid-level management access\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/RolePermission/CreateRole",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"RolePermission",
+								"CreateRole"
+							]
+						},
+						"description": "Creates a new role. Requires ROLE_MANAGEMENT_WRITE permission."
+					},
+					"response": []
+				},
+				{
+					"name": "GetRoles",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"UserId\": 1,\n    \"RoleId\": null\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/RolePermission/GetRoles",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"RolePermission",
+								"GetRoles"
+							]
+						},
+						"description": "Retrieves all roles or a specific role if RoleId is provided. Requires ROLE_MANAGEMENT_READ permission."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for managing roles in the system."
+		},
+		{
+			"name": "Permission Management",
+			"item": [
+				{
+					"name": "GetPermissions",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"UserId\": 1\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/RolePermission/GetPermissions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"RolePermission",
+								"GetPermissions"
+							]
+						},
+						"description": "Retrieves all permissions in the system. Requires PERMISSION_MANAGEMENT_READ permission."
+					},
+					"response": []
+				},
+				{
+					"name": "AssignPermissionToRole",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"UserId\": 1,\n    \"RoleId\": 2,\n    \"PermissionId\": 3\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/RolePermission/AssignPermissionToRole",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"RolePermission",
+								"AssignPermissionToRole"
+							]
+						},
+						"description": "Assigns a permission to a role. Requires PERMISSION_MANAGEMENT_WRITE permission."
+					},
+					"response": []
+				},
+				{
+					"name": "GetUserPermissions",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"UserId\": 1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/RolePermission/GetUserPermissions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"RolePermission",
+								"GetUserPermissions"
+							]
+						},
+						"description": "Retrieves all permissions assigned to a user based on their role."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for managing permissions and their associations with roles."
+		},
+		{
+			"name": "User Role Management",
+			"item": [
+				{
+					"name": "AssignUserRole",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"RequestUserId\": 1,\n    \"TargetUserId\": 2,\n    \"RoleId\": 2\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/RolePermission/AssignUserRole",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"RolePermission",
+								"AssignUserRole"
+							]
+						},
+						"description": "Assigns a role to a user. Requires USER_ROLE_MANAGEMENT_WRITE permission."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for managing user-role assignments."
+		},
+		{
+			"name": "User List Access",
+			"item": [
+				{
+					"name": "GetAllUsers",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"UserId\": 4\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/RolePermission/GetAllUsers",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"RolePermission",
+								"GetAllUsers"
+							]
+						},
+						"description": "Retrieves all users in the system. Requires USER_LIST_READ permission."
+					},
+					"response": []
+				},
+				{
+					"name": "GetCustomers",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"UserId\": 4\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/RolePermission/GetCustomers",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"RolePermission",
+								"GetCustomers"
+							]
+						},
+						"description": "Retrieves all users with the Customer role (role_id = 2). Requires CUSTOMER_LIST_READ permission."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for accessing user lists with permission-based restrictions."
+		},
+		{
 			"name": "Create User",
 			"request": {
 				"method": "POST",
