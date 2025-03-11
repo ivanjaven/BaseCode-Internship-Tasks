@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "bb736ded-04bc-4108-b099-a2b05b1fd9af",
+		"_postman_id": "09bd49ac-dcd8-4229-a264-64aefb742ddd",
 		"name": "BaseCode",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "36204526"
@@ -447,6 +447,105 @@
 			"description": "Endpoints for accessing user lists with permission-based restrictions."
 		},
 		{
+			"name": "Car Management",
+			"item": [
+				{
+					"name": "GetAllCars",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"Status\": \"A\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/Car/GetAllCars",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"Car",
+								"GetAllCars"
+							]
+						},
+						"description": "Retrieves all cars with the specified status (default 'A' for active)."
+					},
+					"response": []
+				},
+				{
+					"name": "GetCarById",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"UserId\": 1,\n    \"CarId\": 1\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/Car/GetCarById",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"Car",
+								"GetCarById"
+							]
+						},
+						"description": "Retrieves a specific car by its ID."
+					},
+					"response": []
+				},
+				{
+					"name": "GetCarByName",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"CarName\": \"Tesla\"\n}\n"
+						},
+						"url": {
+							"raw": "http://localhost:5001/Car/GetCarByName",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"Car",
+								"GetCarByName"
+							]
+						},
+						"description": "Searches for cars by name or brand that match the search term."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for managing cars in the dealership system."
+		},
+		{
 			"name": "Create User",
 			"request": {
 				"method": "POST",
@@ -789,7 +888,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n  \"UserId\": \"\",\r\n  \"FirstName\": \"John\",\r\n  \"LastName\": \"Dee\"\r\n}\r\n",
+					"raw": "{\r\n  \"UserId\": 1,\r\n  \"FirstName\": \"Ivan\",\r\n  \"LastName\": \"Javen\"\r\n}\r\n",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -873,7 +972,10 @@
 			"name": "View Profile",
 			"request": {
 				"method": "GET",
-				"header": []
+				"header": [],
+				"url": {
+					"raw": ""
+				}
 			},
 			"response": []
 		},
@@ -881,7 +983,10 @@
 			"name": "Delete User Account",
 			"request": {
 				"method": "GET",
-				"header": []
+				"header": [],
+				"url": {
+					"raw": ""
+				}
 			},
 			"response": []
 		}

@@ -34,6 +34,8 @@ using BaseCode.Models.Responses.Customer;
 using BaseCode.Models.Requests.Customer;
 using BaseCode.Models.Requests.Roles;
 using BaseCode.Models.Responses.Roles;
+using BaseCode.Models.Requests.Car;
+using BaseCode.Models.Responses.Car;
 
 namespace BaseCode.Models
 {
@@ -845,7 +847,7 @@ namespace BaseCode.Models
 
         // Task 4 (Feb 17)
         // CREATE 
-        public CreateCustomerResponse RegisterCustomer(RegisterCustomerRequest r) 
+        public CreateCustomerResponse RegisterCustomer(RegisterCustomerRequest r)
         {
             CreateCustomerResponse resp = new CreateCustomerResponse();
 
@@ -1181,7 +1183,7 @@ namespace BaseCode.Models
         }
 
         // LOG IN
-        public LogInCustomerResponse LogInCustomer(LogInUserRequest r) 
+        public LogInCustomerResponse LogInCustomer(LogInUserRequest r)
         {
             LogInCustomerResponse resp = new LogInCustomerResponse();
             try
@@ -1670,6 +1672,155 @@ namespace BaseCode.Models
             {
                 resp.Message = ex.ToString();
                 resp.isSuccess = false;
+            }
+            return resp;
+        }
+
+        // TASK 6 (MARCH 4) CAR MANAGEMENT
+        public GetCarResponse GetCarById(GetCarByIdRequest r)
+        {
+            GetCarResponse resp = new GetCarResponse();
+            resp.Data = new List<Dictionary<string, string>>();
+
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    string sql = "SELECT * FROM CAR WHERE CAR_ID = @CAR_ID";
+
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    cmd.Parameters.Add(new MySqlParameter("@CAR_ID", r.CarId));
+                    var reader = cmd.ExecuteReader();
+
+                    if (reader.HasRows)
+                    {
+                        DataTable dt = new DataTable();
+                        dt.Load(reader);
+                        reader.Close();
+                        var columns = dt.Columns.Cast<DataColumn>();
+
+                        resp.Data.AddRange(dt.AsEnumerable()
+                            .Select(dataRow => columns.Select(column =>
+                                new { Column = column.ColumnName, Value = dataRow[column] })
+                                .ToDictionary(data => data.Column.ToString(), data => data.Value.ToString()))
+                            .ToList());
+
+                        resp.isSuccess = true;
+                        resp.Message = "Car found";
+
+                        if (resp.Data.Count > 0)
+                        {
+                            var firstCarData = resp.Data[0];
+                            resp.CarId = int.Parse(firstCarData["CAR_ID"]);
+                        }
+                    }
+                    else
+                    {
+                        resp.isSuccess = false;
+                        resp.Message = "No car found with the specified ID";
+                    }
+                    conn.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                resp.isSuccess = false;
+                resp.Message = "An error occurred: " + ex.Message;
+            }
+            return resp;
+        }
+
+        public GetCarsResponse GetAllCars(GetAllCarsRequest r)
+        {
+            GetCarsResponse resp = new GetCarsResponse();
+            resp.Data = new List<Dictionary<string, string>>();
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    string sql = "SELECT * FROM CAR WHERE CAR_STATUS = @STATUS";
+
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    cmd.Parameters.Add(new MySqlParameter("@STATUS", r.Status));
+                    var reader = cmd.ExecuteReader();
+
+                    if (reader.HasRows)
+                    {
+                        DataTable dt = new DataTable();
+                        dt.Load(reader);
+                        reader.Close();
+                        var columns = dt.Columns.Cast<DataColumn>();
+
+                        resp.Data.AddRange(dt.AsEnumerable()
+                            .Select(dataRow => columns.Select(column =>
+                                new { Column = column.ColumnName, Value = dataRow[column] })
+                                .ToDictionary(data => data.Column.ToString(), data => data.Value.ToString()))
+                            .ToList());
+
+                        resp.isSuccess = true;
+                        resp.Message = "List of cars retrieved successfully";
+                    }
+                    else
+                    {
+                        resp.isSuccess = false;
+                        resp.Message = "No cars found";
+                    }
+                    conn.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                resp.isSuccess = false;
+                resp.Message = "An error occurred: " + ex.Message;
+            }
+            return resp;
+        }
+
+        public GetCarsResponse GetCarByName(GetCarByNameRequest r)
+        {
+            GetCarsResponse resp = new GetCarsResponse();
+            resp.Data = new List<Dictionary<string, string>>();
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    string sql = "SELECT * FROM CAR WHERE (CAR_MODEL LIKE @CAR_NAME OR CAR_BRAND LIKE @CAR_NAME) AND CAR_STATUS = 'A'";
+
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    cmd.Parameters.Add(new MySqlParameter("@CAR_NAME", "%" + r.CarName + "%"));
+                    var reader = cmd.ExecuteReader();
+
+                    if (reader.HasRows)
+                    {
+                        DataTable dt = new DataTable();
+                        dt.Load(reader);
+                        reader.Close();
+                        var columns = dt.Columns.Cast<DataColumn>();
+
+                        resp.Data.AddRange(dt.AsEnumerable()
+                            .Select(dataRow => columns.Select(column =>
+                                new { Column = column.ColumnName, Value = dataRow[column] })
+                                .ToDictionary(data => data.Column.ToString(), data => data.Value.ToString()))
+                            .ToList());
+
+                        resp.isSuccess = true;
+                        resp.Message = "Cars matching the search criteria found";
+                    }
+                    else
+                    {
+                        resp.isSuccess = false;
+                        resp.Message = "No cars found matching the search criteria";
+                    }
+                    conn.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                resp.isSuccess = false;
+                resp.Message = "An error occurred: " + ex.Message;
             }
             return resp;
         }
