@@ -9,7 +9,6 @@ using BaseCode.Models.Responses.Car;
 
 namespace BaseCode.Controllers
 {
-    // TASK 6 (MARCH 4) CAR MANAGEMENT
     [ApiController]
     [Route("[controller]")]
     public class CarController : Controller
@@ -28,10 +27,11 @@ namespace BaseCode.Controllers
         [HttpPost("GetAllCars")]
         public IActionResult GetAllCars([FromBody] GetAllCarsRequest r)
         {
-            GetCarsResponse resp = new GetCarsResponse();
+            if (r.Page < 1) r.Page = 1;
+            if (r.PageSize < 1) r.PageSize = 10;
+            if (r.PageSize > 100) r.PageSize = 100; 
 
-            resp = db.GetAllCars(r);
-
+            GetCarsResponse resp = db.GetAllCars(r);
             if (resp.isSuccess)
                 return Ok(resp);
             else
@@ -42,16 +42,13 @@ namespace BaseCode.Controllers
         public IActionResult GetCarById([FromBody] GetCarByIdRequest r)
         {
             GetCarResponse resp = new GetCarResponse();
-
             if (r.CarId <= 0)
             {
                 resp.isSuccess = false;
                 resp.Message = "Please provide a valid Car ID.";
                 return BadRequest(resp);
             }
-
             resp = db.GetCarById(r);
-
             if (resp.isSuccess)
                 return Ok(resp);
             else
@@ -61,17 +58,18 @@ namespace BaseCode.Controllers
         [HttpPost("GetCarByName")]
         public IActionResult GetCarByName([FromBody] GetCarByNameRequest r)
         {
-            GetCarsResponse resp = new GetCarsResponse();
+            if (r.Page < 1) r.Page = 1;
+            if (r.PageSize < 1) r.PageSize = 10;
+            if (r.PageSize > 100) r.PageSize = 100; 
 
+            GetCarsResponse resp = new GetCarsResponse();
             if (string.IsNullOrEmpty(r.CarName))
             {
                 resp.isSuccess = false;
                 resp.Message = "Please provide a car name to search.";
                 return BadRequest(resp);
             }
-
             resp = db.GetCarByName(r);
-
             if (resp.isSuccess)
                 return Ok(resp);
             else

@@ -1,10 +1,9 @@
-﻿using System;
+﻿using BaseCode.Models.Requests;
 
 namespace BaseCode.Models.Requests.Car
 {
-    public class GetAllCarsRequest
+    public class GetAllCarsRequest : PaginationRequest
     {
-        public int UserId { get; set; }
-        public string Status { get; set; } = "A"; 
+        public string Status { get; set; } = "A";
     }
 }

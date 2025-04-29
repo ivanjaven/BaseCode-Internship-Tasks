@@ -31,11 +31,14 @@ namespace BaseCode.Controllers
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
         };
 
-        public BaseCodeController(DBContext context, IWebHostEnvironment environment, IHttpContextAccessor accessor)
+        private readonly TemplateService _templateService;
+
+        public BaseCodeController(DBContext context, IWebHostEnvironment environment, IHttpContextAccessor accessor, TemplateService templateService)
         {
             _IPAccess = accessor;
             db = context;
             hostingEnvironment = environment;
+            _templateService = templateService;
         }
 
         [HttpGet]
@@ -482,6 +485,51 @@ namespace BaseCode.Controllers
             }
 
             resp = db.ForgotPassword(r);
+            if (resp.isSuccess)
+                return Ok(resp);
+            else
+                return BadRequest(resp);
+        }
+
+        // EMAIL VERIFICATION
+        [HttpPost("SendVerificationEmail")]
+        public IActionResult SendVerificationEmail([FromBody] EmailVerificationRequest r)
+        {
+            GenericAPIResponse resp = new GenericAPIResponse();
+
+            if (string.IsNullOrEmpty(r.Email))
+            {
+                resp.Message = "Please specify Email.";
+                return BadRequest(resp);
+            }
+
+            resp = db.SendVerificationEmail(r, _templateService);
+
+            if (resp.isSuccess)
+                return Ok(resp);
+            else
+                return BadRequest(resp);
+        }
+
+        [HttpPost("VerifyEmail")]
+        public IActionResult VerifyEmail([FromBody] VerifyEmailRequest r)
+        {
+            GenericAPIResponse resp = new GenericAPIResponse();
+
+            if (string.IsNullOrEmpty(r.Email))
+            {
+                resp.Message = "Please specify Email.";
+                return BadRequest(resp);
+            }
+
+            if (string.IsNullOrEmpty(r.Token))
+            {
+                resp.Message = "Please specify Token.";
+                return BadRequest(resp);
+            }
+
+            resp = db.VerifyEmail(r);
+
             if (resp.isSuccess)
                 return Ok(resp);
             else

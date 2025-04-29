@@ -36,7 +36,18 @@ namespace BaseCode
             var conn = "Server=" + db_host + ";Port=" + db_port + ";Database=" + db_name + ";Uid=" + db_user + ";Pwd=" + db_password + ";Convert Zero Datetime=True";
             services.Add(new ServiceDescriptor(typeof(DBContext), new DBContext(conn)));
 
+            // NCM database connection
+            var ncm_host = Environment.GetEnvironmentVariable("NCM_DB_HOST") ?? db_host;
+            var ncm_port = Environment.GetEnvironmentVariable("NCM_DB_PORT") ?? db_port;
+            var ncm_name = Environment.GetEnvironmentVariable("NCM_DB_NAME") ?? "ncm";
+            var ncm_user = Environment.GetEnvironmentVariable("NCM_DB_USER") ?? db_user;
+            var ncm_password = Environment.GetEnvironmentVariable("NCM_DB_PASS") ?? db_password;
 
+            var ncmConn = "Server=" + ncm_host + ";Port=" + ncm_port + ";Database=" + ncm_name + ";Uid=" + ncm_user + ";Pwd=" + ncm_password + ";Convert Zero Datetime=True";
+
+            var templateService = new TemplateService(ncmConn);
+            services.AddSingleton<TemplateService>(templateService);
+            services.AddSingleton<DBContext>(new DBContext(conn));
 
             services.AddMvc().AddJsonOptions(o =>
             {

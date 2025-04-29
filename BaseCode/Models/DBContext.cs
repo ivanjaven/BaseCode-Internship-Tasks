@@ -37,18 +37,52 @@ using BaseCode.Models.Responses.Roles;
 using BaseCode.Models.Requests.Car;
 using BaseCode.Models.Responses.Car;
 
+using System.Net.Http.Headers;
+using System.Net.Mail;
+
+
+
 namespace BaseCode.Models
 {
     public class DBContext
     {
         public string ConnectionString { get; set; }
-        public DBContext(string connStr)
+        private readonly TemplateService _templateService;
+        public DBContext(string connStr, TemplateService templateService = null)
         {
             this.ConnectionString = connStr;
+            this._templateService = templateService;
         }
         private MySqlConnection GetConnection()
         {
             return new MySqlConnection(ConnectionString);
+        }
+
+        public void LogAPICalls(string api_path, object param, object resp, string errorMsg = "", string ipAddress = "")
+        {
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                try
+                {
+                    string parameters = JsonConvert.SerializeObject(param, Formatting.Indented);
+                    string response = JsonConvert.SerializeObject(resp, Formatting.Indented);
+
+                    MySqlCommand sql = new MySqlCommand("INSERT INTO API_LOG(API_METHOD_NAME, API_PARAMETERS, API_RESPONSE, API_IP_ADDRESS, API_TRACE_ID) VALUES(@API_METHOD_NAME, @API_PARAMETERS, @API_RESPONSE, @API_IP_ADDRESS, @API_TRACE_ID)", conn);
+                    sql.Parameters.Add(new MySqlParameter("@API_METHOD_NAME", api_path));
+                    sql.Parameters.Add(new MySqlParameter("@API_PARAMETERS", parameters));
+                    sql.Parameters.Add(new MySqlParameter("@API_RESPONSE", response));
+                    sql.Parameters.Add(new MySqlParameter("@API_IP_ADDRESS", ipAddress));
+                    sql.Parameters.Add(new MySqlParameter("@API_TRACE_ID", errorMsg));
+                    sql.ExecuteNonQuery();
+                    conn.Close();
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex.ToString());
+                    conn.Close();
+                }
+            }
         }
 
         public GenericInsertUpdateResponse InsertUpdateData(GenericInsertUpdateRequest r)
@@ -70,14 +104,17 @@ namespace BaseCode.Models
                     resp.isSuccess = true;
                     resp.Message = r.responseMessage;
                 }
+                LogAPICalls("/BaseCode/InsertUpdateData", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = r.errorMessage + ": " + ex.Message;
+                LogAPICalls("/BaseCode/InsertUpdateData", r, resp, ex.Message);
             }
             return resp;
         }
+
         public CreateUserResponse CreateUserUsingSqlScript(CreateUserRequest r)
         {
             CreateUserResponse resp = new CreateUserResponse();
@@ -102,16 +139,16 @@ namespace BaseCode.Models
 
                     conn.Close();
                 }
+                resp.isSuccess = true;
+                resp.Message = "Successfully added user profile.";
+                LogAPICalls("/BaseCode/CreateUser", r, resp, resp.isSuccess ? "" : resp.Message);
             }
-
             catch (Exception ex)
             {
                 resp.Message = "Please try again.";
                 resp.isSuccess = false;
-                return resp;
+                LogAPICalls("/BaseCode/CreateUser", r, resp, ex.Message);
             }
-            resp.isSuccess = true;
-            resp.Message = "Successfully added user profile.";
             return resp;
         }
 
@@ -124,12 +161,9 @@ namespace BaseCode.Models
 
             try
             {
-
                 using (MySqlConnection conn = GetConnection())
-
                 {
                     conn.Open();
-
 
                     MySqlCommand cmd = new MySqlCommand("UPDATE USER SET FIRST_NAME = @FIRST_NAME, LAST_NAME = @LAST_NAME, USER_NAME = @USER_NAME, PASSWORD = @PASSWORD " +
                     "WHERE USER_ID = @USER_ID;", conn);
@@ -143,17 +177,19 @@ namespace BaseCode.Models
 
                     conn.Close();
                 }
+                resp.isSuccess = true;
+                resp.Message = "Successfully updated user profile.";
+                LogAPICalls("/BaseCode/UpdateUser", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.Message = ex.ToString();
                 resp.isSuccess = false;
-                return resp;
+                LogAPICalls("/BaseCode/UpdateUser", r, resp, ex.Message);
             }
-            resp.isSuccess = true;
-            resp.Message = "Successfully updated user profile.";
             return resp;
         }
+
         public CreateUserResponse DeleteUser(string userId)
         {
             CreateUserResponse resp = new CreateUserResponse();
@@ -163,10 +199,8 @@ namespace BaseCode.Models
             try
             {
                 using (MySqlConnection conn = GetConnection())
-
                 {
                     conn.Open();
-
 
                     MySqlCommand cmd = new MySqlCommand("UPDATE USER SET STATUS = 'I' " +
                     "WHERE USER_ID = @USER_ID;", conn);
@@ -175,19 +209,20 @@ namespace BaseCode.Models
                     cmd.ExecuteNonQuery();
 
                     conn.Close();
-
                 }
+                resp.isSuccess = true;
+                resp.Message = "Successfully deleted user.";
+                LogAPICalls("/BaseCode/DeleteUser", userId, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.Message = ex.ToString();
                 resp.isSuccess = false;
-                return resp;
+                LogAPICalls("/BaseCode/DeleteUser", userId, resp, ex.Message);
             }
-            resp.isSuccess = true;
-            resp.Message = "Successfully deleted user.";
             return resp;
         }
+
         public GetUserListResponse GetUserList(GetUserListRequest r)
         {
             GetUserListResponse resp = new GetUserListResponse();
@@ -216,14 +251,14 @@ namespace BaseCode.Models
                     resp.Message = "List of users:";
                     conn.Close();
                 }
+                LogAPICalls("/BaseCode/GetUserList", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.Message = ex.ToString();
                 resp.isSuccess = false;
-                return resp;
+                LogAPICalls("/BaseCode/GetUserList", r, resp, ex.Message);
             }
-
             return resp;
         }
 
@@ -254,13 +289,13 @@ namespace BaseCode.Models
                         resp.isSuccess = true;
                         resp.Message = "User Found";
                         conn.Close();
-
+                        LogAPICalls("/BaseCode/GetUserById", r, resp, resp.isSuccess ? "" : resp.Message);
                         return resp;
                     }
                     resp.isSuccess = true;
                     resp.Message = "No User Found";
                     conn.Close();
-
+                    LogAPICalls("/BaseCode/GetUserById", r, resp, resp.isSuccess ? "" : resp.Message);
                     return resp;
                 }
             }
@@ -268,12 +303,10 @@ namespace BaseCode.Models
             {
                 resp.Message = ex.ToString();
                 resp.isSuccess = false;
+                LogAPICalls("/BaseCode/GetUserById", r, resp, ex.Message);
                 return resp;
             }
-
-            return resp;
         }
-
         public GenericGetDataResponse GetData(string query)
         {
             GenericGetDataResponse resp = new GenericGetDataResponse();
@@ -297,12 +330,13 @@ namespace BaseCode.Models
                 resp.isSuccess = true;
                 resp.Message = "Successfully get data";
                 resp.Data = dt;
-
+                LogAPICalls("/BaseCode/GetData", query, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = ex.Message;
+                LogAPICalls("/BaseCode/GetData", query, resp, ex.Message);
             }
             return resp;
         }
@@ -315,7 +349,6 @@ namespace BaseCode.Models
             try
             {
                 using (MySqlConnection conn = GetConnection())
-
                 {
                     conn.Open();
 
@@ -332,16 +365,16 @@ namespace BaseCode.Models
 
                     conn.Clone();
                 }
+                resp.isSuccess = true;
+                resp.Message = "Successfully added user info profile.";
+                LogAPICalls("/BaseCode/CreateUserInfo", r, resp, resp.isSuccess ? "" : resp.Message);
             }
-
             catch (Exception ex)
             {
                 resp.Message = ex.ToString();
                 resp.isSuccess = false;
-                return resp;
+                LogAPICalls("/BaseCode/CreateUserInfo", r, resp, ex.Message);
             }
-            resp.isSuccess = true;
-            resp.Message = "Successfully added user info profile.";
             return resp;
         }
 
@@ -374,7 +407,7 @@ namespace BaseCode.Models
                     resp.isSuccess = true;
                     resp.Message = "List of users profile:";
                     conn.Close();
-
+                    LogAPICalls("/BaseCode/GetUserProfileList", r, resp, resp.isSuccess ? "" : resp.Message);
                     return resp;
                 }
             }
@@ -382,9 +415,9 @@ namespace BaseCode.Models
             {
                 resp.Message = ex.ToString();
                 resp.isSuccess = false;
+                LogAPICalls("/BaseCode/GetUserProfileList", r, resp, ex.Message);
                 return resp;
             }
-
         }
 
         // TASK 2 (FEBRUARY 1)
@@ -441,19 +474,21 @@ namespace BaseCode.Models
                     }
                     catch (Exception ex)
                     {
-
                         transaction.Rollback();
                         resp.isSuccess = false;
                         resp.Message = "Error: " + ex.Message;
+                        LogAPICalls("/BaseCode/RegisterUser", r, resp, ex.Message);
+                        return resp;
                     }
                 }
+                LogAPICalls("/BaseCode/RegisterUser", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = "Database connection error: " + ex.Message;
+                LogAPICalls("/BaseCode/RegisterUser", r, resp, ex.Message);
             }
-
             return resp;
         }
 
@@ -491,16 +526,16 @@ namespace BaseCode.Models
 
                     conn.Close();
                 }
+                LogAPICalls("/BaseCode/LogInUser", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = "An error occurred: " + ex.Message;
+                LogAPICalls("/BaseCode/LogInUser", r, resp, ex.Message);
             }
-
             return resp;
         }
-
         public ResetPasswordResponse ResetPassword(Requests.ResetPasswordRequest r)
         {
             ResetPasswordResponse resp = new ResetPasswordResponse();
@@ -551,11 +586,13 @@ namespace BaseCode.Models
 
                     conn.Close();
                 }
+                LogAPICalls("/BaseCode/ResetPassword", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = "An error occurred: " + ex.Message;
+                LogAPICalls("/BaseCode/ResetPassword", r, resp, ex.Message);
             }
 
             return resp;
@@ -580,6 +617,7 @@ namespace BaseCode.Models
                     {
                         resp.isSuccess = false;
                         resp.Message = "User ID not found.";
+                        LogAPICalls("/BaseCode/UpdateUserInfo", r, resp, resp.Message);
                         return resp;
                     }
 
@@ -688,13 +726,17 @@ namespace BaseCode.Models
                         transaction.Rollback();
                         resp.isSuccess = false;
                         resp.Message = "Error: " + ex.Message;
+                        LogAPICalls("/BaseCode/UpdateUserInfo", r, resp, ex.Message);
+                        return resp;
                     }
                 }
+                LogAPICalls("/BaseCode/UpdateUserInfo", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = "Database connection error: " + ex.Message;
+                LogAPICalls("/BaseCode/UpdateUserInfo", r, resp, ex.Message);
             }
 
             return resp;
@@ -708,7 +750,7 @@ namespace BaseCode.Models
             try
             {
                 // Generate the OTP code using the OTPGenerator class
-                string otpCode = OTPGenerator.GenerateOTP(r.UserId);
+                string otpCode = OTPGenerator.GenerateOTP();
 
                 string accountSid = Environment.GetEnvironmentVariable("TWILIO_ACCOUNT_SID");
                 string authToken = Environment.GetEnvironmentVariable("TWILIO_AUTH_TOKEN");
@@ -718,7 +760,7 @@ namespace BaseCode.Models
                 var messageOptions = new CreateMessageOptions(
                     new PhoneNumber(r.PhoneNumber))
                 {
-                    From = new PhoneNumber("+16184056690"),
+                    From = new PhoneNumber("+15632042922"),
                     Body = $"Your OTP code is {otpCode}"
                 };
 
@@ -753,18 +795,22 @@ namespace BaseCode.Models
                     {
                         resp.isSuccess = true;
                         resp.Message = "OTP sent successfully but failed to save to database.";
+                        LogAPICalls("/BaseCode/SendOTPResetCode", r, resp, ex.Message);
                     }
                 }
                 catch (Twilio.Exceptions.ApiException ex)
                 {
                     resp.isSuccess = false;
                     resp.Message = "Failed to send OTP: " + ex.Message;
+                    LogAPICalls("/BaseCode/SendOTPResetCode", r, resp, ex.Message);
                 }
+                LogAPICalls("/BaseCode/SendOTPResetCode", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = "An error occurred: " + ex.Message;
+                LogAPICalls("/BaseCode/SendOTPResetCode", r, resp, ex.Message);
             }
 
             return resp;
@@ -797,6 +843,7 @@ namespace BaseCode.Models
                         {
                             resp.isSuccess = false;
                             resp.Message = "Invalid OTP code.";
+                            LogAPICalls("/BaseCode/ValidateOTP", r, resp, resp.Message);
                             return resp;
                         }
 
@@ -808,6 +855,7 @@ namespace BaseCode.Models
                         {
                             resp.isSuccess = false;
                             resp.Message = $"OTP is {status.ToLower()}.";
+                            LogAPICalls("/BaseCode/ValidateOTP", r, resp, resp.Message);
                             return resp;
                         }
 
@@ -822,6 +870,7 @@ namespace BaseCode.Models
 
                             resp.isSuccess = false;
                             resp.Message = "OTP has expired.";
+                            LogAPICalls("/BaseCode/ValidateOTP", r, resp, resp.Message);
                             return resp;
                         }
 
@@ -835,16 +884,17 @@ namespace BaseCode.Models
                         resp.Message = "OTP validation successful.";
                     }
                 }
+                LogAPICalls("/BaseCode/ValidateOTP", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = "An error occurred during OTP validation: " + ex.Message;
+                LogAPICalls("/BaseCode/ValidateOTP", r, resp, ex.Message);
             }
 
             return resp;
         }
-
         // Task 4 (Feb 17)
         // CREATE 
         public CreateCustomerResponse RegisterCustomer(RegisterCustomerRequest r)
@@ -900,17 +950,20 @@ namespace BaseCode.Models
                     }
                     catch (Exception ex)
                     {
-
                         transaction.Rollback();
                         resp.isSuccess = false;
                         resp.Message = "Error: " + ex.Message;
+                        LogAPICalls("/BaseCode/RegisterCustomer", r, resp, ex.Message);
+                        return resp;
                     }
                 }
+                LogAPICalls("/BaseCode/RegisterCustomer", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = "Database connection error: " + ex.Message;
+                LogAPICalls("/BaseCode/RegisterCustomer", r, resp, ex.Message);
             }
 
             return resp;
@@ -938,6 +991,8 @@ namespace BaseCode.Models
                     {
                         resp.isSuccess = false;
                         resp.Message = "No active session found. Please login again.";
+                        sessionReader.Close();
+                        LogAPICalls("/BaseCode/ViewCustomerProfile", r, resp, resp.Message);
                         return resp;
                     }
                     sessionReader.Close();
@@ -982,11 +1037,13 @@ namespace BaseCode.Models
                     }
                     conn.Close();
                 }
+                LogAPICalls("/BaseCode/ViewCustomerProfile", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.Message = ex.ToString();
                 resp.isSuccess = false;
+                LogAPICalls("/BaseCode/ViewCustomerProfile", r, resp, ex.Message);
             }
             return resp;
         }
@@ -1011,6 +1068,7 @@ namespace BaseCode.Models
                     {
                         resp.isSuccess = false;
                         resp.Message = "No active session found. Please log in first.";
+                        LogAPICalls("/BaseCode/UpdateCustomerInfo", r, resp, resp.Message);
                         return resp;
                     }
 
@@ -1023,6 +1081,7 @@ namespace BaseCode.Models
                     {
                         resp.isSuccess = false;
                         resp.Message = "Customer ID not found.";
+                        LogAPICalls("/BaseCode/UpdateCustomerInfo", r, resp, resp.Message);
                         return resp;
                     }
 
@@ -1131,18 +1190,21 @@ namespace BaseCode.Models
                         transaction.Rollback();
                         resp.isSuccess = false;
                         resp.Message = "Error: " + ex.Message;
+                        LogAPICalls("/BaseCode/UpdateCustomerInfo", r, resp, ex.Message);
+                        return resp;
                     }
                 }
+                LogAPICalls("/BaseCode/UpdateCustomerInfo", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = "Database connection error: " + ex.Message;
+                LogAPICalls("/BaseCode/UpdateCustomerInfo", r, resp, ex.Message);
             }
 
             return resp;
         }
-
         // DELETE
         public CreateCustomerResponse DeleteCustomerAccount(string customerId)
         {
@@ -1162,6 +1224,7 @@ namespace BaseCode.Models
                     {
                         resp.isSuccess = false;
                         resp.Message = "No active session found. Please log in first.";
+                        LogAPICalls("/BaseCode/DeleteCustomerAccount", customerId, resp, resp.Message);
                         return resp;
                     }
 
@@ -1173,11 +1236,13 @@ namespace BaseCode.Models
                     resp.isSuccess = true;
                     resp.Message = "Successfully deleted customer.";
                 }
+                LogAPICalls("/BaseCode/DeleteCustomerAccount", customerId, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = "An error occurred: " + ex.Message;
+                LogAPICalls("/BaseCode/DeleteCustomerAccount", customerId, resp, ex.Message);
             }
             return resp;
         }
@@ -1208,6 +1273,7 @@ namespace BaseCode.Models
                         {
                             resp.isSuccess = false;
                             resp.Message = "Account is temporarily locked. Please try again later.";
+                            LogAPICalls("/BaseCode/LogInCustomer", r, resp, resp.Message);
                             return resp;
                         }
 
@@ -1259,11 +1325,13 @@ namespace BaseCode.Models
                         throw;
                     }
                 }
+                LogAPICalls("/BaseCode/LogInCustomer", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = "An error occurred: " + ex.Message;
+                LogAPICalls("/BaseCode/LogInCustomer", r, resp, ex.Message);
             }
             return resp;
         }
@@ -1319,11 +1387,13 @@ namespace BaseCode.Models
 
                     conn.Close();
                 }
+                LogAPICalls("/BaseCode/ForgotPassword", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = "An error occurred: " + ex.Message;
+                LogAPICalls("/BaseCode/ForgotPassword", r, resp, ex.Message);
             }
 
             return resp;
@@ -1363,17 +1433,20 @@ namespace BaseCode.Models
                         transaction.Rollback();
                         resp.isSuccess = false;
                         resp.Message = "Error creating role: " + ex.Message;
+                        LogAPICalls("/RolePermission/CreateRole", r, resp, ex.Message);
+                        return resp;
                     }
                 }
+                LogAPICalls("/RolePermission/CreateRole", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = "An error occurred: " + ex.Message;
+                LogAPICalls("/RolePermission/CreateRole", r, resp, ex.Message);
             }
             return resp;
         }
-
         public GetRoleListResponse GetRoles(GetRoleRequest r)
         {
             GetRoleListResponse resp = new GetRoleListResponse();
@@ -1414,11 +1487,13 @@ namespace BaseCode.Models
                     resp.isSuccess = true;
                     resp.Message = "Roles retrieved successfully";
                 }
+                LogAPICalls("/RolePermission/GetRoles", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = "An error occurred: " + ex.Message;
+                LogAPICalls("/RolePermission/GetRoles", r, resp, ex.Message);
             }
             return resp;
         }
@@ -1452,11 +1527,13 @@ namespace BaseCode.Models
                     resp.isSuccess = true;
                     resp.Message = "Permissions retrieved successfully";
                 }
+                LogAPICalls("/RolePermission/GetPermissions", null, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = "An error occurred: " + ex.Message;
+                LogAPICalls("/RolePermission/GetPermissions", null, resp, ex.Message);
             }
             return resp;
         }
@@ -1483,6 +1560,7 @@ namespace BaseCode.Models
                         {
                             resp.isSuccess = true;
                             resp.Message = "Permission already assigned to role";
+                            LogAPICalls("/RolePermission/AssignPermissionToRole", r, resp, "");
                             return resp;
                         }
 
@@ -1502,13 +1580,17 @@ namespace BaseCode.Models
                         transaction.Rollback();
                         resp.isSuccess = false;
                         resp.Message = "Error assigning permission: " + ex.Message;
+                        LogAPICalls("/RolePermission/AssignPermissionToRole", r, resp, ex.Message);
+                        return resp;
                     }
                 }
+                LogAPICalls("/RolePermission/AssignPermissionToRole", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = "An error occurred: " + ex.Message;
+                LogAPICalls("/RolePermission/AssignPermissionToRole", r, resp, ex.Message);
             }
             return resp;
         }
@@ -1536,6 +1618,7 @@ namespace BaseCode.Models
                         {
                             resp.isSuccess = false;
                             resp.Message = "User not found";
+                            LogAPICalls("/RolePermission/AssignUserRole", r, resp, resp.Message);
                             return resp;
                         }
 
@@ -1549,13 +1632,17 @@ namespace BaseCode.Models
                         transaction.Rollback();
                         resp.isSuccess = false;
                         resp.Message = "Error assigning role: " + ex.Message;
+                        LogAPICalls("/RolePermission/AssignUserRole", r, resp, ex.Message);
+                        return resp;
                     }
                 }
+                LogAPICalls("/RolePermission/AssignUserRole", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = "An error occurred: " + ex.Message;
+                LogAPICalls("/RolePermission/AssignUserRole", r, resp, ex.Message);
             }
             return resp;
         }
@@ -1580,15 +1667,16 @@ namespace BaseCode.Models
                     cmd.Parameters.Add(new MySqlParameter("@PERMISSION_NAME", permissionName));
 
                     int count = Convert.ToInt32(cmd.ExecuteScalar());
-                    return count > 0;
+                    bool result = count > 0;
+
+                    return result;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return false;
             }
         }
-
         public PermissionResponse GetUserPermissions(int userId)
         {
             PermissionResponse resp = new PermissionResponse();
@@ -1631,14 +1719,17 @@ namespace BaseCode.Models
                         resp.Message = "User has no permissions";
                     }
                 }
+                LogAPICalls("/RolePermission/GetUserPermissions", userId, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = "An error occurred: " + ex.Message;
+                LogAPICalls("/RolePermission/GetUserPermissions", userId, resp, ex.Message);
             }
             return resp;
         }
+
         public GetUserListResponse GetCustomerUsers()
         {
             GetUserListResponse resp = new GetUserListResponse();
@@ -1667,11 +1758,13 @@ namespace BaseCode.Models
                     resp.Message = "List of customers:";
                     conn.Close();
                 }
+                LogAPICalls("/RolePermission/GetCustomers", null, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.Message = ex.ToString();
                 resp.isSuccess = false;
+                LogAPICalls("/RolePermission/GetCustomers", null, resp, ex.Message);
             }
             return resp;
         }
@@ -1722,11 +1815,13 @@ namespace BaseCode.Models
                     }
                     conn.Close();
                 }
+                LogAPICalls("/Car/GetCarById", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = "An error occurred: " + ex.Message;
+                LogAPICalls("/Car/GetCarById", r, resp, ex.Message);
             }
             return resp;
         }
@@ -1740,12 +1835,21 @@ namespace BaseCode.Models
                 using (MySqlConnection conn = GetConnection())
                 {
                     conn.Open();
-                    string sql = "SELECT * FROM CAR WHERE CAR_STATUS = @STATUS";
 
+                    string countSql = "SELECT COUNT(*) FROM CAR WHERE CAR_STATUS = @STATUS";
+                    MySqlCommand countCmd = new MySqlCommand(countSql, conn);
+                    countCmd.Parameters.Add(new MySqlParameter("@STATUS", r.Status));
+                    int totalCount = Convert.ToInt32(countCmd.ExecuteScalar());
+
+                    int offset = (r.Page - 1) * r.PageSize;
+
+                    string sql = "SELECT * FROM CAR WHERE CAR_STATUS = @STATUS LIMIT @LIMIT OFFSET @OFFSET";
                     MySqlCommand cmd = new MySqlCommand(sql, conn);
                     cmd.Parameters.Add(new MySqlParameter("@STATUS", r.Status));
-                    var reader = cmd.ExecuteReader();
+                    cmd.Parameters.Add(new MySqlParameter("@LIMIT", r.PageSize));
+                    cmd.Parameters.Add(new MySqlParameter("@OFFSET", offset));
 
+                    var reader = cmd.ExecuteReader();
                     if (reader.HasRows)
                     {
                         DataTable dt = new DataTable();
@@ -1759,6 +1863,15 @@ namespace BaseCode.Models
                                 .ToDictionary(data => data.Column.ToString(), data => data.Value.ToString()))
                             .ToList());
 
+                        int totalPages = (int)Math.Ceiling(totalCount / (double)r.PageSize);
+                        resp.Pagination = new PaginationInfo
+                        {
+                            CurrentPage = r.Page,
+                            PageSize = r.PageSize,
+                            TotalItems = totalCount,
+                            TotalPages = totalPages
+                        };
+
                         resp.isSuccess = true;
                         resp.Message = "List of cars retrieved successfully";
                     }
@@ -1766,14 +1879,23 @@ namespace BaseCode.Models
                     {
                         resp.isSuccess = false;
                         resp.Message = "No cars found";
+                        resp.Pagination = new PaginationInfo
+                        {
+                            CurrentPage = r.Page,
+                            PageSize = r.PageSize,
+                            TotalItems = 0,
+                            TotalPages = 0
+                        };
                     }
                     conn.Close();
                 }
+                LogAPICalls("/Car/GetAllCars", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = "An error occurred: " + ex.Message;
+                LogAPICalls("/Car/GetAllCars", r, resp, ex.Message);
             }
             return resp;
         }
@@ -1787,12 +1909,21 @@ namespace BaseCode.Models
                 using (MySqlConnection conn = GetConnection())
                 {
                     conn.Open();
-                    string sql = "SELECT * FROM CAR WHERE (CAR_MODEL LIKE @CAR_NAME OR CAR_BRAND LIKE @CAR_NAME) AND CAR_STATUS = 'A'";
 
+                    string countSql = "SELECT COUNT(*) FROM CAR WHERE (CAR_MODEL LIKE @CAR_NAME OR CAR_BRAND LIKE @CAR_NAME) AND CAR_STATUS = 'A'";
+                    MySqlCommand countCmd = new MySqlCommand(countSql, conn);
+                    countCmd.Parameters.Add(new MySqlParameter("@CAR_NAME", "%" + r.CarName + "%"));
+                    int totalCount = Convert.ToInt32(countCmd.ExecuteScalar());
+
+                    int offset = (r.Page - 1) * r.PageSize;
+
+                    string sql = "SELECT * FROM CAR WHERE (CAR_MODEL LIKE @CAR_NAME OR CAR_BRAND LIKE @CAR_NAME) AND CAR_STATUS = 'A' LIMIT @LIMIT OFFSET @OFFSET";
                     MySqlCommand cmd = new MySqlCommand(sql, conn);
                     cmd.Parameters.Add(new MySqlParameter("@CAR_NAME", "%" + r.CarName + "%"));
-                    var reader = cmd.ExecuteReader();
+                    cmd.Parameters.Add(new MySqlParameter("@LIMIT", r.PageSize));
+                    cmd.Parameters.Add(new MySqlParameter("@OFFSET", offset));
 
+                    var reader = cmd.ExecuteReader();
                     if (reader.HasRows)
                     {
                         DataTable dt = new DataTable();
@@ -1806,6 +1937,15 @@ namespace BaseCode.Models
                                 .ToDictionary(data => data.Column.ToString(), data => data.Value.ToString()))
                             .ToList());
 
+                        int totalPages = (int)Math.Ceiling(totalCount / (double)r.PageSize);
+                        resp.Pagination = new PaginationInfo
+                        {
+                            CurrentPage = r.Page,
+                            PageSize = r.PageSize,
+                            TotalItems = totalCount,
+                            TotalPages = totalPages
+                        };
+
                         resp.isSuccess = true;
                         resp.Message = "Cars matching the search criteria found";
                     }
@@ -1813,14 +1953,228 @@ namespace BaseCode.Models
                     {
                         resp.isSuccess = false;
                         resp.Message = "No cars found matching the search criteria";
+                        resp.Pagination = new PaginationInfo
+                        {
+                            CurrentPage = r.Page,
+                            PageSize = r.PageSize,
+                            TotalItems = 0,
+                            TotalPages = 0
+                        };
                     }
                     conn.Close();
                 }
+                LogAPICalls("/Car/GetCarByName", r, resp, resp.isSuccess ? "" : resp.Message);
             }
             catch (Exception ex)
             {
                 resp.isSuccess = false;
                 resp.Message = "An error occurred: " + ex.Message;
+                LogAPICalls("/Car/GetCarByName", r, resp, ex.Message);
+            }
+            return resp;
+        }
+
+        // Email Verification
+        public GenericAPIResponse SendVerificationEmail(EmailVerificationRequest r, TemplateService templateService = null)
+        {
+            GenericAPIResponse resp = new GenericAPIResponse();
+
+            try
+            {
+                TemplateService service = templateService ?? _templateService;
+                string verificationCode = OTPGenerator.GenerateOTP();
+                string userName = "There!";
+
+                if (!string.IsNullOrEmpty(r.Email))
+                {
+                    try
+                    {
+                        using (MySqlConnection conn = GetConnection())
+                        {
+                            conn.Open();
+                            string userSql = "SELECT FIRST_NAME FROM USER WHERE EMAIL = @EMAIL AND STATUS = 'A'";
+                            MySqlCommand userCmd = new MySqlCommand(userSql, conn);
+                            userCmd.Parameters.Add(new MySqlParameter("@EMAIL", r.Email));
+                            var userResult = userCmd.ExecuteScalar();
+                            if (userResult != null && !Convert.IsDBNull(userResult))
+                            {
+                                userName = userResult.ToString();
+                            }
+                            conn.Close();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error getting user name: " + ex.Message);
+                    }
+                }
+
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+
+                    string sql = "INSERT INTO EMAIL_VERIFICATION (EMAIL, TOKEN, EXPIRY_TIME, STATUS, USER_ID) " +
+                                 "VALUES (@EMAIL, @TOKEN, @EXPIRY_TIME, @STATUS, @USER_ID);";
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+
+                    cmd.Parameters.Add(new MySqlParameter("@EMAIL", r.Email));
+                    cmd.Parameters.Add(new MySqlParameter("@TOKEN", verificationCode));
+                    cmd.Parameters.Add(new MySqlParameter("@EXPIRY_TIME", DateTime.Now.AddMinutes(15)));
+                    cmd.Parameters.Add(new MySqlParameter("@STATUS", "ACTIVE"));
+                    cmd.Parameters.Add(new MySqlParameter("@USER_ID", r.UserId));
+
+                    cmd.ExecuteNonQuery();
+                    conn.Close();
+                }
+
+                string emailBody;
+                string emailSubject = "Your Email Verification Code";
+
+                if (service != null)
+                {
+                    var template = service.GetTemplateByCode("WELCOMEEMAIL");
+
+                    if (template != null)
+                    {
+                        emailBody = template.TemplateContent
+                            .Replace("~NAME~", userName)
+                            .Replace("~VCODE~", verificationCode);
+
+                        if (!string.IsNullOrEmpty(template.TemplateSubject))
+                        {
+                            emailSubject = template.TemplateSubject;
+                        }
+                    }
+                    else
+                    {
+                        emailBody = $"<html><body>" +
+                                 $"<h2>Email Verification</h2>" +
+                                 $"<p>Hello {userName},</p>" +
+                                 $"<p>Your verification code is: <strong>{verificationCode}</strong></p>" +
+                                 $"<p>This code will expire in 15 minutes.</p>" +
+                                 $"</body></html>";
+                    }
+                }
+                else
+                {
+                    emailBody = $"<html><body>" +
+                             $"<h2>Email Verification</h2>" +
+                             $"<p>Hello {userName},</p>" +
+                             $"<p>Your verification code is: <strong>{verificationCode}</strong></p>" +
+                             $"<p>This code will expire in 15 minutes.</p>" +
+                             $"</body></html>";
+                }
+
+                using (var mailMessage = new System.Net.Mail.MailMessage())
+                {
+                    mailMessage.From = new System.Net.Mail.MailAddress("crisivan.javen.9@gmail.com", "Email Verification");
+                    mailMessage.To.Add(new System.Net.Mail.MailAddress(r.Email));
+                    mailMessage.Subject = emailSubject;
+                    mailMessage.Body = emailBody;
+                    mailMessage.IsBodyHtml = true;
+
+                    using (var smtpClient = new System.Net.Mail.SmtpClient("smtp.gmail.com", 587))
+                    {
+                        smtpClient.EnableSsl = true;
+                        smtpClient.DeliveryMethod = System.Net.Mail.SmtpDeliveryMethod.Network;
+                        smtpClient.UseDefaultCredentials = false;
+                        smtpClient.Credentials = new System.Net.NetworkCredential(
+                            "crisivan.javen.9@gmail.com",
+                            "mcas tuum jsjc yrbf");
+
+                        smtpClient.Timeout = 30000;
+                        smtpClient.Send(mailMessage);
+                    }
+                }
+
+                resp.isSuccess = true;
+                resp.Message = "Verification code sent to your email.";
+                LogAPICalls("/BaseCode/SendVerificationEmail", r, resp, "");
+            }
+            catch (Exception ex)
+            {
+                resp.isSuccess = false;
+                resp.Message = "Failed to send verification email: " + ex.Message;
+                LogAPICalls("/BaseCode/SendVerificationEmail", r, resp, ex.Message);
+            }
+
+            return resp;
+        }
+        public GenericAPIResponse VerifyEmail(VerifyEmailRequest r)
+        {
+            GenericAPIResponse resp = new GenericAPIResponse();
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+
+                    string sql = @"SELECT USER_ID, STATUS, EXPIRY_TIME 
+                           FROM EMAIL_VERIFICATION 
+                           WHERE EMAIL = @EMAIL 
+                           AND TOKEN = @TOKEN
+                           ORDER BY CREATE_DATE DESC 
+                           LIMIT 1";
+
+                    MySqlCommand selectCmd = new MySqlCommand(sql, conn);
+                    selectCmd.Parameters.Add(new MySqlParameter("@EMAIL", r.Email));
+                    selectCmd.Parameters.Add(new MySqlParameter("@TOKEN", r.Token));
+
+                    using (var reader = selectCmd.ExecuteReader())
+                    {
+                        if (!reader.Read())
+                        {
+                            resp.isSuccess = false;
+                            resp.Message = "Invalid verification code.";
+                            LogAPICalls("/BaseCode/VerifyEmail", r, resp, resp.Message);
+                            return resp;
+                        }
+
+                        string status = reader.GetString("STATUS");
+                        DateTime expiryTime = reader.GetDateTime("EXPIRY_TIME");
+                        reader.Close();
+
+                        if (status != "ACTIVE")
+                        {
+                            resp.isSuccess = false;
+                            resp.Message = $"Verification code is {status.ToLower()}.";
+                            LogAPICalls("/BaseCode/VerifyEmail", r, resp, resp.Message);
+                            return resp;
+                        }
+
+                        if (DateTime.Now > expiryTime)
+                        {
+                            string updateExpiredSql = "UPDATE EMAIL_VERIFICATION SET STATUS = 'EXPIRED' WHERE EMAIL = @EMAIL AND TOKEN = @TOKEN";
+                            MySqlCommand updateExpiredCmd = new MySqlCommand(updateExpiredSql, conn);
+                            updateExpiredCmd.Parameters.Add(new MySqlParameter("@EMAIL", r.Email));
+                            updateExpiredCmd.Parameters.Add(new MySqlParameter("@TOKEN", r.Token));
+                            updateExpiredCmd.ExecuteNonQuery();
+
+                            resp.isSuccess = false;
+                            resp.Message = "Verification code has expired.";
+                            LogAPICalls("/BaseCode/VerifyEmail", r, resp, resp.Message);
+                            return resp;
+                        }
+
+                        string updateUsedSql = "UPDATE EMAIL_VERIFICATION SET STATUS = 'USED' WHERE EMAIL = @EMAIL AND TOKEN = @TOKEN";
+                        MySqlCommand updateUsedCmd = new MySqlCommand(updateUsedSql, conn);
+                        updateUsedCmd.Parameters.Add(new MySqlParameter("@EMAIL", r.Email));
+                        updateUsedCmd.Parameters.Add(new MySqlParameter("@TOKEN", r.Token));
+                        updateUsedCmd.ExecuteNonQuery();
+
+                        resp.isSuccess = true;
+                        resp.Message = "Email verification successful.";
+                    }
+
+                    conn.Close();
+                }
+                LogAPICalls("/BaseCode/VerifyEmail", r, resp, resp.isSuccess ? "" : resp.Message);
+            }
+            catch (Exception ex)
+            {
+                resp.isSuccess = false;
+                resp.Message = "Error verifying email: " + ex.Message;
+                LogAPICalls("/BaseCode/VerifyEmail", r, resp, ex.Message);
             }
             return resp;
         }
